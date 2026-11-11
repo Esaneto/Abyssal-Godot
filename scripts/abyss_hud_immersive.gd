@@ -18,7 +18,7 @@ static func _frame(c: CanvasItem, rect: Rect2, chosen: bool = false) -> void:
 	c.draw_line(rect.position+Vector2(1,12),rect.position+Vector2(1,rect.size.y-9),
 		Color(0.19,0.31,0.37,0.54),1.0,true)
 	for sign in [0.0,1.0]:
-		var sx := rect.position.x+(8 if sign==0 else rect.size.x-8)
+		var sx: float = rect.position.x+(8.0 if sign==0.0 else rect.size.x-8.0)
 		c.draw_line(Vector2(sx,rect.position.y+rect.size.y-9),
 			Vector2(sx+(-5 if sign==0 else 5),rect.position.y+rect.size.y-9),
 			BRASS if chosen else MUTED.darkened(0.35),1.3,true)
@@ -80,7 +80,7 @@ static func paint(c: Node2D, rect: Rect2, diver: CharacterBody2D, progress: RefC
 	for index in range(3):
 		var name: String = TOOLS[index]
 		var left := base+Vector2(float(index)*(slot_width+slot_gap),0)
-		var active := progress != null and progress.selected_tool()==name
+		var active: bool = progress != null and progress.selected_tool()==name
 		_frame(c,Rect2(left,Vector2(slot_width,64.0)),active)
 		UI.item(c,name,left+Vector2(25,29),0.76)
 		UI.caption(c,str(index+1),left+Vector2(7,15),10,BRASS if active else MUTED)
