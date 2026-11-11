@@ -91,7 +91,9 @@ func _arm(side: float) -> Node3D:
 	suit_meshes.append(Shapes.ellipsoid(node,"Upper arm",Vector3(side*0.055,-0.23,0.02),Vector3(0.145,0.29,0.15),Color("#25435d"),0.10))
 	Shapes.ellipsoid(node,"Elbow joint",Vector3(side*0.07,-0.45,0.09),Vector3(0.125,0.12,0.14),Color("#13273b"),0.25)
 	suit_meshes.append(Shapes.ellipsoid(node,"Forearm",Vector3(side*0.085,-0.57,0.22),Vector3(0.115,0.22,0.12),Color("#25435d"),0.10))
-	Shapes.ellipsoid(node,"Glove",Vector3(side*0.10,-0.74,0.29),Vector3(0.12,0.12,0.095),Color("#111e33"),0.38)
+	Shapes.ellipsoid(node,"Glove",Vector3(side*0.10,-0.74,0.29),Vector3(0.105,0.11,0.095),Color("#111e33"),0.22)
+	Shapes.box(node,"Wrist dive computer",Vector3(side*0.12,-0.64,0.35),Vector3(0.12,0.08,0.06),Color("#172c39"),0.42)
+	Shapes.box(node,"Animated computer screen",Vector3(side*0.12,-0.64,0.39),Vector3(0.078,0.046,0.014),Color("#6edcdb"),0.12,1.65)
 	return node
 
 func _leg(side: float) -> Node3D:
@@ -143,16 +145,24 @@ func animate(t: float, swimming: bool, moving: bool, facing_right: bool = true) 
 		pivot.rotation.z = -PI*0.5 if facing_right else PI*0.5
 		pivot.rotation.x = 0.10*sin(t*1.2)
 		pivot.position.y = 0.04*sin(t*2.0)
-		arm_l.rotation.x = -1.2+0.12*sin(beat)
-		arm_r.rotation.x = -1.0-0.12*sin(beat+1.0)
-		leg_l.rotation.x = sway*0.36
-		leg_r.rotation.x = -sway*0.36
+		arm_l.rotation.z = 2.77+0.10*sin(beat)
+		arm_r.rotation.z = -2.77-0.10*sin(beat+0.8)
+		arm_l.rotation.x = -0.12
+		arm_r.rotation.x = 0.13
+		leg_l.rotation.z = sway*0.24
+		leg_r.rotation.z = -sway*0.24
+		leg_l.rotation.x = sway*0.13
+		leg_r.rotation.x = -sway*0.13
 	else:
 		pivot.rotation.z = 0.0
 		pivot.rotation.x = 0.0
 		pivot.position.y = 0.012*sin(t*1.2)
+		arm_l.rotation.z = -0.12
+		arm_r.rotation.z = 0.12
 		arm_l.rotation.x = -0.45+0.04*sin(t*1.3)
 		arm_r.rotation.x = -0.45+0.04*sin(t*1.3+0.9)
+		leg_l.rotation.z = 0.0
+		leg_r.rotation.z = 0.0
 		leg_l.rotation.x = -0.75
 		leg_r.rotation.x = -0.75
 	skull.rotation.z = sin(t*0.72)*0.023
