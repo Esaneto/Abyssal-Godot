@@ -562,9 +562,15 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 				if pool.is_empty():
 					continue
 				var species: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
-				# Solitary oceanic giants should not cluster in schools.
-				if species["id"] == "manta" and (cx + cy * 3 + j) % 5 != 0:
-					species = pool[(rng.randi_range(0, pool.size() - 1) + 1) % pool.size()]
+				# Giant rays are rare, not an aquarium wall of overlapping diamonds.
+				# Deterministic choice per sector avoids pop-in after camera movement.
+				if str(species["id"]) in ["manta", "eagle_ray"] and (cx * 3 + cy * 5 + j) % 5 != 0:
+					var smaller: Array[Dictionary] = []
+					for candidate in pool:
+						if str(candidate["id"]) not in ["manta", "eagle_ray"]:
+							smaller.append(candidate)
+					if not smaller.is_empty():
+						species = smaller[rng.randi_range(0, smaller.size() - 1)]
 				if species["id"] in ["isopod", "seapig"]:
 					base.y = _seafloor_y(base.x) - 35.0
 				var phase := time_s + float(seed_value + j) * 0.7
