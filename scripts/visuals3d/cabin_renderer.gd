@@ -14,6 +14,8 @@ var env_node: WorldEnvironment
 var clock := 0.0
 var previous_look := ""
 var glass: MeshInstance3D
+var ocean_shadow: Node3D
+var shadow_tail: Node3D
 
 func _ready() -> void:
 	viewport = SubViewport.new()
@@ -42,6 +44,7 @@ func _ready() -> void:
 	_light(Vector3(2.9,2.7,3.3),Color("#5c9eb2"),1.0,8.0)
 	_light(Vector3(-0.2,0.15,-7),Color("#3b8997"),1.2,14.0)
 	_build_outside()
+	_build_leviathan_shadow()
 	_build_glass()
 	_build_hull()
 	_build_instruments()
@@ -91,6 +94,44 @@ func _build_outside() -> void:
 		Shapes.fin(group,"Sunbeam in ocean",Vector3(-0.18,4.2,0),Vector3(0.60,-2.5,0),
 			Vector3(-1.0,-2.5,0),Color(0.43,0.94,0.99,0.055))
 		foliage.append(group)
+
+func _build_leviathan_shadow() -> void:
+	# A rare passing deep-sea silhouette beyond the actual window glass.
+	# All contours, photophores and fins are separate moving 3D parts.
+	ocean_shadow = Node3D.new()
+	ocean_shadow.name = "DeepWindowVisitor"
+	ocean_shadow.position = Vector3(3.5,1.25,-9.0)
+	stage.add_child(ocean_shadow)
+	var shadow := Color("#142d3c")
+	var ridge := Color("#244657")
+	Shapes.ellipsoid(ocean_shadow,"Muscular flank",Vector3(-0.18,0,0),
+		Vector3(1.50,0.44,0.48),shadow,0.06)
+	Shapes.ellipsoid(ocean_shadow,"Tapered head",Vector3(1.08,0.0,0),
+		Vector3(0.51,0.32,0.40),shadow.lightened(0.03),0.11)
+	Shapes.fin(ocean_shadow,"Abyssal crest",Vector3(-0.52,0.23,0),
+		Vector3(-0.14,1.03,0),Vector3(0.32,0.24,0),ridge)
+	Shapes.fin(ocean_shadow,"Abdominal keel",Vector3(-0.61,-0.27,0),
+		Vector3(-0.19,-0.78,0),Vector3(0.53,-0.22,0),shadow.darkened(0.25))
+	Shapes.fin(ocean_shadow,"Pectoral blade",Vector3(0.23,-0.06,0.38),
+		Vector3(-0.48,-0.43,0.54),Vector3(-0.24,-0.18,0.43),ridge)
+	shadow_tail = Node3D.new()
+	shadow_tail.name = "ArticulatedTail"
+	shadow_tail.position = Vector3(-1.48,0,0)
+	ocean_shadow.add_child(shadow_tail)
+	Shapes.ellipsoid(shadow_tail,"Tail peduncle",Vector3(-0.32,0,0),
+		Vector3(0.46,0.14,0.18),shadow)
+	Shapes.fin(shadow_tail,"Upper tail lobe",Vector3(-0.49,0,0),
+		Vector3(-0.98,0.79,0),Vector3(-0.80,0.04,0),ridge)
+	Shapes.fin(shadow_tail,"Lower tail lobe",Vector3(-0.49,0,0),
+		Vector3(-0.90,-0.76,0),Vector3(-0.81,-0.04,0),shadow)
+	for i in range(7):
+		var x := -0.92+float(i)*0.31
+		var y := -0.30+0.10*sin(float(i)*1.9)
+		Shapes.ellipsoid(ocean_shadow,"Faint lateral photophore",
+			Vector3(x,y,0.45),Vector3(0.025,0.023,0.015),
+			Color("#3f8990"),0.08,0.30)
+	Shapes.ellipsoid(ocean_shadow,"Reflective eye",Vector3(1.32,0.08,0.34),
+		Vector3(0.050,0.044,0.027),Color("#699da2"),0.10,0.32)
 
 func _coral_group(pos: Vector3, seed_value: int) -> void:
 	var cluster := Node3D.new()
@@ -212,6 +253,12 @@ func update_live(time_value: float, appearance: Dictionary) -> void:
 		actor.position.x = base+sin(clock*0.20+float(i)*1.73)*1.4
 		actor.position.y = 1.3+sin(float(i)*2.2+clock*0.42)*0.67
 		actor.call("animate",clock)
+	if ocean_shadow != null:
+		# The animal crosses the outer pane slowly, turning out of view naturally.
+		ocean_shadow.position.x = 3.4+2.7*sin(clock*0.038)
+		ocean_shadow.position.y = 1.27+0.22*sin(clock*0.073)
+		ocean_shadow.rotation.y = 0.06*sin(clock*0.041)
+		shadow_tail.rotation.y = 0.21*sin(clock*0.92)
 	for i in range(foliage.size()):
 		var stem := foliage[i]
 		stem.rotation.z = sin(clock*0.42+float(i))*0.07
