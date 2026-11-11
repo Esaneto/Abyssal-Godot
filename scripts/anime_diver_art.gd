@@ -2,13 +2,13 @@ extends RefCounted
 ## Licensed artwork: generated original ABYSSAL anime-realistic diver PNGs.
 ## A single artwork is shared by every view: swim + submarine. No flattened HUD.
 ## Source assets are copied separately into assets/art/characters by the installer.
-const FEMALE_PATH := "res://assets/art/characters/anime_diver_female.png"
-const MALE_PATH := "res://assets/art/characters/anime_diver_male.png"
+const FEMALE_PATH := "res://assets/art/character/abyssal_diver_female_animated_art.webp"
+const MALE_PATH := "res://assets/art/character/abyssal_diver_male_animated_art.webp"
 const EFFECT := preload("res://shaders/anime_diver_swim.gdshader")
 
 const IMAGE_WIDTH := 1448.0
 const IMAGE_HEIGHT := 1086.0
-const SWIM_WIDTH := 218.0
+const SWIM_WIDTH := 244.0
 const SWIM_HEIGHT := SWIM_WIDTH * IMAGE_HEIGHT / IMAGE_WIDTH
 const COLS := 36
 const ROWS := 28
@@ -24,15 +24,17 @@ static func texture_for(body: String) -> Texture2D:
 	if _textures.has(id):
 		return _textures[id] as Texture2D
 	var path := source_path(id)
-	if not FileAccess.file_exists(path):
-		# Fallback to the existing procedural artist, enabling CI and legacy users
-		# to run the branch without installing the high-resolution artwork yet.
+	# The finished character textures now ship in the Git repository.
+	# Imported resources are preferred; Image fallback supports local editor preview.
+	var texture: Texture2D = load(path) as Texture2D
+	if texture == null and FileAccess.file_exists(path):
+		var img: Image = Image.load_from_file(path)
+		if img != null and not img.is_empty():
+			img.generate_mipmaps()
+			texture = ImageTexture.create_from_image(img)
+	if texture == null:
+		push_error("ABYSSAL ART MISSING: " + path)
 		return null
-	var img: Image = Image.load_from_file(path)
-	if img == null or img.is_empty():
-		return null
-	img.generate_mipmaps()
-	var texture := ImageTexture.create_from_image(img)
 	_textures[id] = texture
 	return texture
 

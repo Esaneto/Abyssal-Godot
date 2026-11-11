@@ -57,8 +57,9 @@ func _ready() -> void:
 	add_child(collision)
 	anime_rig = NativeRig.new()
 	add_child(anime_rig)
-	# The new illustrated rig is drawn from articulated geometry each frame.
-	anime_rig.visible = false
+	# High-resolution texture mesh with independently deforming hair/fins, not the older polygon doll.
+	anime_rig.update_look(appearance,time_s,false,true)
+	anime_rig.rotation = 0.0
 	_create_propulsion_bubbles()
 	queue_redraw()
 
@@ -122,6 +123,9 @@ func _physics_process(delta: float) -> void:
 		health = maxf(0.0, health - pressure_hazard * delta)
 	if health <= 0.0:
 		diver_died.emit()
+	if anime_rig != null:
+		anime_rig.rotation = visual_heading
+		anime_rig.update_look(appearance,time_s,is_moving or is_propelling,true)
 	if propulsion_bubbles != null:
 		propulsion_bubbles.emitting = is_propelling
 		propulsion_bubbles.position = Vector2(-58.0, 10.0).rotated(visual_heading)
@@ -130,7 +134,8 @@ func _physics_process(delta: float) -> void:
 
 func set_appearance(candidate: Dictionary) -> void:
 	appearance = Look.normalize(candidate)
-	# Preserve the selected colors while the illustrated mesh is redrawn.
+	if anime_rig != null:
+		anime_rig.update_look(appearance,time_s,is_moving,true)
 	queue_redraw()
 
 func configure_equipment(oxygen_level: int, suit_level: int, motor_level: int = 0) -> void:
@@ -176,8 +181,9 @@ func _create_propulsion_bubbles() -> void:
 	add_child(propulsion_bubbles)
 
 func _draw() -> void:
-	# Fully articulated hand-inked local rendering, rotated by physical swim heading.
-	# Avoids the plastic/low-poly placeholder and never uses a fixed PNG character.
+	# Only fallback to hand-inked procedural artwork if an imported texture is actually missing.
+	if anime_rig != null and anime_rig.has_visible_character():
+		return
 	draw_set_transform(Vector2.ZERO,visual_heading,Vector2.ONE)
 	InkSwimmer.paint(self,appearance,time_s,is_moving,is_propelling,
 		equipped_tool,is_extracting,velocity.length())

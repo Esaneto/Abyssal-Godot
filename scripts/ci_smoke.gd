@@ -27,6 +27,11 @@ func _smoke() -> void:
 		push_error("Renderizador 3D de oceano indisponivel")
 		quit(10)
 		return
+	var high_res_art = load("res://scripts/anime_diver_art.gd")
+	if high_res_art.texture_for("female") == null or high_res_art.texture_for("male") == null:
+		push_error("Committed high-resolution diver assets failed to load")
+		quit(20)
+		return
 	main.call("_start_sea")
 	await physics_frame
 	if not world.visible:
