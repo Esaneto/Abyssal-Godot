@@ -41,6 +41,15 @@ func _capture() -> void:
 	for i in range(18):
 		await process_frame
 	_save_screen("mar-aberto-superficie.png")
+	var expedition = main.get_node("ExpedicaoOceanica")
+	expedition.call("_unhandled_input",_key_event(KEY_V))
+	for i in range(6):
+		await process_frame
+	_save_screen("mar-aberto-modo-2d-comparacao.png")
+	expedition.call("_unhandled_input",_key_event(KEY_V))
+	for i in range(6):
+		await process_frame
+	_save_screen("mar-aberto-nativo-3d.png")
 	_save_screen("mar-aberto-mergulhador.png")
 	var visual_diver := main.get_node("ExpedicaoOceanica/Mergulhador")
 	var close_camera := visual_diver.get_node("CameraExploracao")

@@ -12,10 +12,20 @@ func _smoke() -> void:
 	var main := scene.instantiate()
 	root.add_child(main)
 	await process_frame
+	var bridge := main.get_node_or_null("CinematicCabin3D")
+	if bridge == null or bridge.call("texture") == null:
+		push_error("Cabine 3D cinematografica nao inicializou")
+		quit(9)
+		return
 	var world := main.get_node_or_null("ExpedicaoOceanica")
 	if world == null:
 		push_error("Expedicao Oceanica nao foi criada")
 		quit(3)
+		return
+	var renderer := world.get_node_or_null("Native3DOcean")
+	if renderer == null or renderer.call("texture") == null:
+		push_error("Renderizador 3D de oceano indisponivel")
+		quit(10)
 		return
 	main.call("_start_sea")
 	await physics_frame
@@ -48,5 +58,5 @@ func _smoke() -> void:
 			quit(8)
 			return
 	main.call("_unhandled_input", InputEventKey.new())
-	print("GODOT_SMOKE_PASS: cabine, mar aberto, fisica e escala da fauna")
+	print("GODOT_SMOKE_PASS: cabine 3D, oceano 3D, fisica 2D, fauna e progressao")
 	quit(0)

@@ -5,11 +5,11 @@ const ProgressScript = preload("res://scripts/exploration_progress.gd")
 const CabinArt = preload("res://scripts/native_cabin_art.gd")
 const UIArt = preload("res://scripts/ui_art_primitives.gd")
 const Wardrobe = preload("res://scripts/wardrobe_ui.gd")
-const Pilot3D = preload("res://scripts/native_cabin_pilot_3d.gd")
+const Cabin3D = preload("res://scripts/visuals3d/cabin_renderer.gd")
 const Look = preload("res://scripts/diver_appearance.gd")
 var expedition: Node2D
 var progress: RefCounted
-var cabin_pilot: Node2D
+var cabin_scene: Node
 var lab_open := false
 var lab_selected := 0
 var lab_feedback := ""
@@ -38,10 +38,9 @@ func _ready() -> void:
 	time_s = progress.sun_time()
 	for i in range(75):
 		bubbles.append(Vector2(fposmod(float(i * 197 + 31), W), fposmod(float(i * 113 + 47), H)))
-	cabin_pilot = Pilot3D.new()
-	cabin_pilot.name = "AnimatedCabinPilot3D"
-	cabin_pilot.progress = progress
-	add_child(cabin_pilot)
+	cabin_scene = Cabin3D.new()
+	cabin_scene.name = "CinematicCabin3D"
+	add_child(cabin_scene)
 	expedition = ExpeditionScript.new()
 	expedition.name = "ExpedicaoOceanica"
 	expedition.process_mode = Node.PROCESS_MODE_DISABLED
@@ -52,8 +51,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	time_s += delta
-	if cabin_pilot != null:
-		cabin_pilot.visible = not in_open_sea and not lab_open
+	if cabin_scene != null:
+		cabin_scene.call("set_enabled",not in_open_sea)
+		if not in_open_sea:
+			cabin_scene.call("update_live",time_s,progress.appearance_snapshot())
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -174,7 +175,13 @@ func _start_sea() -> void:
 func _draw() -> void:
 	if in_open_sea:
 		return
-	CabinArt.paint(self,time_s,menu_selected,progress,menu_feedback)
+	if cabin_scene != null:
+		var cabin_tex: Texture2D = cabin_scene.call("texture")
+		if cabin_tex != null:
+			draw_texture_rect(cabin_tex,Rect2(0.0,0.0,1280.0,720.0),false)
+		CabinArt.paint_ui(self,time_s,menu_selected,progress,menu_feedback)
+	else:
+		CabinArt.paint(self,time_s,menu_selected,progress,menu_feedback)
 	if wardrobe_open:
 		Wardrobe.paint(self,progress.appearance_snapshot(),wardrobe_row)
 	if lab_open:

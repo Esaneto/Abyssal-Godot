@@ -36,6 +36,13 @@ static func paint(canvas: Node2D, t: float, selected: int, progress: RefCounted,
 	canvas.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
 	_paint_status(canvas, t, status)
 
+static func paint_ui(canvas: Node2D, t: float, selected: int, progress: RefCounted, status: String) -> void:
+	# A genuine rendered 3D bridge fills the background; only interactive controls stay 2D.
+	canvas.draw_set_transform(Vector2(55.0,0.0),0.0,Vector2(0.95,1.0))
+	_paint_monitor(canvas,t,selected,progress)
+	canvas.draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+	_paint_status(canvas,t,status)
+
 static func _paint_ocean(c: CanvasItem, t: float) -> void:
 	var solar := 0.55 + 0.45 * cos(t * TAU / 420.0)
 	for i in range(54):
