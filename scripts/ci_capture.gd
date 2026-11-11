@@ -132,6 +132,12 @@ func _capture() -> void:
 	for i in range(8):
 		await process_frame
 	_save_screen("cabine-noite.png")
+	# Gallery catches texture import, UV mapping and real species artwork regressions.
+	var gallery = load("res://scripts/ci_fauna_gallery.gd").new()
+	main.add_child(gallery)
+	for i in range(12):
+		await process_frame
+	_save_screen("galeria-fauna-anime.png")
 	quit(0)
 
 func _escape_event() -> InputEventKey:
