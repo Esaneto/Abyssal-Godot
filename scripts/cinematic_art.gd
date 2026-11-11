@@ -242,7 +242,7 @@ static func rock_material(canvas: CanvasItem, contour: PackedVector2Array, cente
 	var uv := PackedVector2Array()
 	for vertex in contour:
 		var light_side := clampf(0.70 - (vertex.x - center.x) / (radius * 3.4) - (vertex.y - center.y) / (radius * 4.2), 0.26, 1.0)
-		var tint := Color("#4b6872").lerp(Color("#879b98"), clampf(light * 0.68, 0.0, 1.0))
+		var tint := Color("#243440").lerp(Color("#6d8585"), clampf(light * 0.68, 0.0, 1.0))
 		colors.append(tint * (0.38 + light_side * 0.53))
 		uv.append((vertex - center) / (radius * 2.0) + Vector2(0.5, 0.5))
 	canvas.draw_polygon(contour, colors, uv, stone_texture())
@@ -275,7 +275,7 @@ static func arch_material(canvas: CanvasItem, outline: PackedVector2Array, light
 	var uv := PackedVector2Array()
 	for vertex in outline:
 		var height_light := clampf(1.0 - (vertex.y - bounds.position.y) / size.y, 0.0, 1.0)
-		var tint := Color("#52616d").lerp(Color("#869792"), clampf(light, 0.0, 0.85))
+		var tint := Color("#263d4b").lerp(Color("#617c7e"), clampf(light, 0.0, 0.85))
 		colors.append(tint * (0.38 + height_light * 0.33))
 		uv.append((vertex - bounds.position) / size)
 	canvas.draw_polygon(outline, colors, uv, stone_texture())
@@ -288,7 +288,7 @@ static func arch_material(canvas: CanvasItem, outline: PackedVector2Array, light
 		var b: Vector2 = outline[facets[tri+1]]
 		var d: Vector2 = outline[facets[tri+2]]
 		poly(canvas,PackedVector2Array([a,b,d]),
-			Color(0.09,0.36,0.54,0.065+float(k%3)*0.015))
+			Color(0.07,0.23,0.35,0.060+float(k%3)*0.012))
 	# Geological seams remain contained inside the volume of the stone.
 	for k in range(5):
 		var y := bounds.position.y + bounds.size.y * (float(k) + 0.7) / 6.0

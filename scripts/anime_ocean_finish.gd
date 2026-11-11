@@ -71,3 +71,38 @@ static func foreground(c: CanvasItem, area: Rect2, t: float, depth_m: float) -> 
 			Color(0.005,0.016,0.035,alpha))
 		c.draw_rect(Rect2(area.end.x-wide-float(i)*25.0,area.position.y,wide,area.size.y),
 			Color(0.005,0.016,0.035,alpha))
+
+
+static func film_grade(c: CanvasItem, area: Rect2, focus: Vector2, t: float, solar: float, depth_m: float) -> void:
+	# Animated color grading, a dim live scene rather than a static dark overlay screenshot.
+	var darkness := clampf(0.09 + (1.0-solar)*0.16 + depth_m/1600.0*0.14,0.05,0.36)
+	c.draw_rect(area,Color(0.006,0.014,0.035,darkness))
+	# Radial, stepped penumbra around the explorer, gently shifted by the currents.
+	var dist_x := maxf(1.0,area.size.x)
+	var dist_y := maxf(1.0,area.size.y)
+	for band in range(7):
+		var b := float(band)
+		var inset := b * 22.0
+		var alpha := (0.010+b*0.002)*(0.45+depth_m/1000.0)
+		c.draw_rect(Rect2(area.position.x+inset,area.position.y+inset,dist_x-inset*2.0,16.0),
+			Color(0.004,0.013,0.026,alpha))
+		c.draw_rect(Rect2(area.position.x+inset,area.end.y-inset-16.0,dist_x-inset*2.0,16.0),
+			Color(0.004,0.013,0.026,alpha))
+	# Occasional flowing caustic arcs move across visible rocks and coral tops.
+	var sunlight := clampf(solar*exp(-depth_m/210.0),0.0,1.0)
+	if sunlight>0.045:
+		for i in range(11):
+			var f := float(i)
+			var px := floorf(area.position.x/145.0)*145.0+f*145.0
+			var py := area.position.y+fposmod(f*137.0+t*6.0,maxf(200.0,area.size.y))
+			var bend := sin(t*0.29+f*1.6)*12.0
+			c.draw_arc(Vector2(px+bend,py),21.0+float(i%3)*8.0,PI*0.17,PI*0.77,12,
+				Color(0.57,0.78,0.78,sunlight*0.035),1.2,true)
+	# Fine, drifting underwater motes are brighter near the flashlight.
+	for i in range(26):
+		var k := float(i)
+		var px := area.position.x+fposmod(k*97.7+sin(t*0.21+k)*15.0,area.size.x)
+		var py := area.position.y+fposmod(k*229.1-t*12.0,area.size.y)
+		var near := clampf(1.0-Vector2(px,py).distance_to(focus)/400.0,0.0,1.0)
+		c.draw_circle(Vector2(px,py),0.55+float(i%3)*0.23,
+			Color(0.56,0.75,0.78,0.055+near*0.20))

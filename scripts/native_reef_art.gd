@@ -3,11 +3,11 @@ extends RefCounted
 ## Solid scenery is provided by ocean_expedition.gd; this layer never changes hitboxes.
 const UI = preload("res://scripts/ui_art_primitives.gd")
 const OriginalArt = preload("res://scripts/cinematic_art.gd")
-const SHALE := Color("#143655")
-const TEAL := Color("#1bd4e5")
-const JADE := Color("#54d2a2")
-const PINK := Color("#dd64c4")
-const AMBER := Color("#ffc46b")
+const SHALE := Color("#152739")
+const TEAL := Color("#468f9b")
+const JADE := Color("#64927f")
+const PINK := Color("#a3698c")
+const AMBER := Color("#ba956b")
 
 static func atmosphere(c: Node2D, area: Rect2, t: float, solar: float, depth_m: float) -> void:
 	# Volumetric hue and a visible three-dimensional water column.
@@ -98,7 +98,7 @@ static func reef_stone(c: CanvasItem, points: PackedVector2Array, light: float) 
 	var palette := PackedColorArray()
 	for vertex in points:
 		var t := clampf((bounds.end.y-vertex.y)/maxf(1.0,bounds.size.y),0.0,1.0)
-		palette.append(Color("#294f70").lerp(Color("#5b91a7"),clampf(0.18+t*0.46+light*0.19,0.0,0.78)))
+		palette.append(Color("#152a3a").lerp(Color("#456174"),clampf(0.18+t*0.46+light*0.19,0.0,0.78)))
 	var uvs := PackedVector2Array()
 	for vertex in points:
 		uvs.append((vertex-bounds.position)/Vector2(maxf(1,bounds.size.x),maxf(1,bounds.size.y)))
@@ -112,7 +112,7 @@ static func reef_stone(c: CanvasItem, points: PackedVector2Array, light: float) 
 		var b: Vector2 = points[mesh[tri+1]]
 		var d: Vector2 = points[mesh[tri+2]]
 		var highlight := 0.055 + float((i*7)%4)*0.018
-		UI.poly(c,[a,b,d], Color(0.09,0.53,0.71,highlight))
+		UI.poly(c,[a,b,d], Color(0.09,0.29,0.39,highlight))
 		if i%2==0:
 			var from_edge := a.lerp(b,0.12)
 			var to_edge := b.lerp(d,0.18)
@@ -133,7 +133,7 @@ static func reef_stone(c: CanvasItem, points: PackedVector2Array, light: float) 
 		var a: Vector2 = points[i]
 		var b: Vector2 = points[i+1]
 		if b.y-a.y<65.0 and b.y-a.y>-75.0 and b.x-a.x>0:
-			c.draw_line(a,b,Color(0.16,0.83,0.97,0.10+light*0.23),2.2,true)
+			c.draw_line(a,b,Color(0.31,0.64,0.70,0.065+light*0.20),2.2,true)
 			# Thin lit shelf bevel remains within the polygon's silhouette.
 			UI.poly(c,[a,b,b+Vector2(-3.0,14.0),a+Vector2(3.0,14.0)],
 				Color(0.23,0.62,0.78,0.05+light*0.11))

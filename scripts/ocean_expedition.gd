@@ -419,6 +419,7 @@ func _draw() -> void:
 	_draw_fauna(area)
 	ReefArt.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	AnimeFinish.foreground(self,area,time_s,depth_at_y(diver.position.y))
+	AnimeFinish.film_grade(self,area,diver.position,time_s,_sunlight(),depth_at_y(diver.position.y))
 	_draw_deep_visibility(area)
 	ReefArt.flashlight(self,diver.position,diver.visual_heading,time_s,depth_at_y(diver.position.y))
 	_draw_hud()
@@ -432,12 +433,12 @@ func _draw_water(area: Rect2) -> void:
 		var y := area.position.y + float(i) * band_h
 		var d := depth_at_y(y)
 		var fade := exp(-d / 260.0)
-		var tint := Color("#020d1b").lerp(Color("#0b667b"), clampf(fade * solar * 0.94, 0.0, 0.93))
+		var tint := Color("#020914").lerp(Color("#0a394d"), clampf(fade * solar * 1.06, 0.0, 0.91))
 		draw_rect(Rect2(area.position.x, y, area.size.x, band_h + 1.5), tint)
 	# Surface and sky are not a wall: the diver can ascend to breathe.
 	if area.position.y < SURFACE_Y:
 		draw_rect(Rect2(area.position.x, area.position.y, area.size.x,
-			maxf(0.0, SURFACE_Y - area.position.y)), Color("#082039").lerp(Color("#398591"), solar * 0.51))
+			maxf(0.0, SURFACE_Y - area.position.y)), Color("#091d30").lerp(Color("#315e69"), solar * 0.44))
 		for ix in range(0, 40):
 			var x := floorf(area.position.x / 65.0) * 65.0 + float(ix) * 65.0
 			var ripple := 3.0 * sin(x * 0.022 + time_s * 1.7)
@@ -449,15 +450,15 @@ func _draw_light_beams(area: Rect2) -> void:
 	var limit_y := minf(SURFACE_Y + 2150.0, area.end.y)
 	if solar < 0.1 or limit_y < area.position.y:
 		return
-	for k in range(15):
-		var x0 := floorf(area.position.x / 260.0) * 260.0 + float(k) * 260.0
+	for k in range(8):
+		var x0 := floorf(area.position.x / 485.0) * 485.0 + float(k) * 485.0
 		var sway := 43.0 * sin(time_s * 0.12 + float(k) * 0.6)
 		var top := maxf(area.position.y, SURFACE_Y)
 		var bottom := maxf(top, limit_y)
 		draw_colored_polygon(PackedVector2Array([
 			Vector2(x0 + sway, top), Vector2(x0 + 35.0 + sway, top),
 			Vector2(x0 + 240.0 + sway, bottom), Vector2(x0 + 97.0 + sway, bottom)
-		]), Color(0.3, 0.97, 0.9, 0.09 * solar))
+		]), Color(0.36, 0.66, 0.76, 0.023 * solar))
 
 func _draw_marine_snow(area: Rect2) -> void:
 	# Deterministic, camera-local particle grid. No per-frame random allocations.
