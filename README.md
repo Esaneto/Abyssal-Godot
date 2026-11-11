@@ -2,12 +2,21 @@
 
 # Abyssal | Exploracao Oceanica em Godot 4
 
-Cliente nativo de testes, em desenvolvimento junto da versao JavaScript. O jogo HTML/JS e o servidor Node.js + PostgreSQL continuam intactos.
+Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza cenarios e personagens 3D renderizados em tempo real, com fisica e progressao local ainda em 2D (arquitetura 2.5D). O codigo web permanece no repositorio separado.
 
 ## Abrir no Godot 4.7.2 (Windows)
 1. Baixe a versao atualizada da branch `main` (ou a branch de desenvolvimento que deseja testar).
-2. Importe `godot-client/project.godot` no Gerenciador de Projetos.
+2. Importe `project.godot` na raiz deste repositorio no Gerenciador de Projetos.
 3. Pressione **F5**.
+
+## Nova apresentacao 3D
+- Cabine inteira construida em `scripts/visuals3d/cabin_renderer.gd`, com janelas, relevo submarino, luzes, poltrona e mergulhador(a) 3D.
+- Mar Aberto renderizado por `scripts/visuals3d/ocean_renderer.gd`. Criaturas 3D animadas correspondem ao catalogo e aos encontros reais da simulacao 2D.
+- Modelo humanoide compartilhado por ambos os modos em `scripts/visuals3d/diver.gd`, com respiracao, cabelo, bracos e pernas articulados.
+- `shaders/underwater_volume.gdshader`: agua e causticas animadas, nao uma captura de tela.
+- A fisica, oxigenio, colisoes, inventario, coletaveis e observacoes permanecem funcionais na simulacao anterior.
+- A tecla **V** alterna os visuais 3D e 2D **apenas no Mar Aberto**, para comparacao e compatibilidade.
+- Nao e um modelo 3D de qualidade AAA; a anatomia e a fauna sao modelos proceduralmente criados como primeira iteracao de arte 3D. Para hiper-realismo sao necessarios modelos autorais de alta fidelidade e rigging adicional.
 
 ## Controles da Cabine
 - **Enter**: entrar/retomar a expedicao
@@ -31,13 +40,14 @@ Cliente nativo de testes, em desenvolvimento junto da versao JavaScript. O jogo 
 - **Tab**: diario de campo, com todas as especies ja registradas recuperadas do save
 - **J / K** (diario aberto): consultar o registro anterior / seguinte e seus habitats
 - **Esc**: voltar ao submarino e salvar ponto atual
+- **V**: alternar entre visual 3D e visual 2D anterior
 
 ## Paridade implementada nesta etapa
 - Fundo e rochas colidiveis em um Mar Aberto de 24.000 x 21.000 unidades
 - Sete arcos de pedra navegaveis com geometria visual/colisao/sonar coincidente
 - Ciclo de dia/noite, luz dependente de profundidade, sedimentos e algas animadas
 - Materiais nativos texturizados por ruido procedural, estratos em rochas/arcos e distancia atmosferica em camadas
-- Cabine panoramica com metal, reflexos, lampadas localizadas e mergulhador/a personalizado em camadas SVG
+- Cabine panoramica 3D com metal, iluminacao PBR, poltrona e mergulhador(a) articulado
 - Mergulhador/a com traje segmentado, nadadeiras articuladas, cabelo animado e ferramenta visual trocavel; HUD reposicionado sem sobreposicao de atalhos
 - Fauna inspirada em animais reais com escala minima de 40% do mergulhador
 - Inventario de minerios, amostras, picareta e cilindro, com coleta validada localmente
@@ -58,30 +68,30 @@ A referencia de Mar Aberto foi convertida em elementos autonomos, nao uma imagem
 - Recifes de plataforma continental com poligonos fisicos iguais aos contornos desenhados, corais e cristais.
 - Vegetacao, peixes, tartarugas e raias com movimento independente; luz direcional acompanha o mergulhador.
 - HUD com estado real do jogador e nove itens do inventario local; somente 1 (picareta) e 2 (cilindro) sao equipaveis.
-- Ponte de comando com janelas panoramicas, mergulhador/a em SVGs vetoriais independentes, roupa/rosto/cabelo editaveis, tela central e seis areas clicaveis.
+- Ponte de comando 3D com ambiente e criaturas animadas, painel funcional sobreposto e seis areas clicaveis.
 - Loja e Fossas aparecem como destinos da versao web, sem funcoes falsas no Godot. Mar Aberto e Laboratorio operam.
 - Os screenshots do teste automatizado sao capturas do proprio Godot, nao mockups estaticos.
 
 Arquivos centrais: scripts/native_cabin_art.gd, scripts/native_reef_art.gd, scripts/native_ocean_hud.gd, scripts/ui_art_primitives.gd, scripts/diver_appearance.gd, scripts/diver_paper_doll.gd, scripts/wardrobe_ui.gd e assets/art/character/*.svg. Veja [pipeline de cosmeticos](docs/CUSTOMIZACAO_PERSONAGEM.md).
 
-O estilo e 2D ilustrado/2.5D. O acabamento permanece inferior ao conceito promocional e precisa de avaliacao artistica e FPS nos dispositivos finais.
+A jogabilidade permanece 2.5D, mas a renderizacao padrao da cabine e da exploracao e 3D. Ainda e necessario aprimorar a modelagem dos personagens e validar FPS em dispositivos finais.
 
 ## Personagens anime-realistas com animação em malha
 
-A cabine e o Mar Aberto agora suportam os **PNGs originais gerados e aprovados**
+O **modo 2D legado** suporta os **PNGs originais gerados e aprovados**
 para o mergulhador e a mergulhadora. A aparência masculina/feminina é lida do
-mesmo perfil local. No mar, a arte é renderizada sobre uma malha deformável,
+mesmo perfil local. No modo 2D alternativo, a arte é renderizada sobre uma malha deformável,
 com animação sutil de nadadeiras, cabelo e respiração, mantendo todas as
 regras físicas anteriores.
 
-**Importante:** os binários de alta resolução devem ser instalados por pacote
-separado em `assets/art/characters/`. Se não estiverem instalados, o cliente
+**Importante:** os PNGs nao sao necessarios no novo modo 3D. Para o modo 2D legado, os binarios podem ser instalados por pacote
+separado em `assets/art/characters/`. Se não estiverem instalados, o modo 2D
 continua exibindo a arte procedural antiga, por compatibilidade.
 
 Veja [instalação dos PNGs e limites de cosméticos](docs/ANIME_REALISTA_ASSETS.md).
 
 ### Renderizacao nativa de personagens (Godot)
-O mergulhador/a com o pacote PNG anime-realista instalado agora usa uma arvore de nos:
+O mergulhador/a do **modo 2D legado**, com o pacote PNG anime-realista instalado, usa uma arvore de nos:
 `CharacterBody2D > AnimeCharacterRig > CharacterMesh (MeshInstance2D)`,
 `CharacterAnimations (AnimationPlayer)` e `RegulatorBubbles (CPUParticles2D)`.
 A animacao `float` controla a flutuacao e `swim` controla o impulso
@@ -89,7 +99,7 @@ enquanto o shader de malha aplica deformacoes localizadas; colisao, inventario
 e progressao continuam independentes do renderizador. Sem os PNGs locais,
 o jogo mostra a arte vetorial anterior, de forma intencional.
 
-Para ativar, instale `anime_diver_female.png` e `anime_diver_male.png`
+Para ativar **somente no visual 2D legado**, instale `anime_diver_female.png` e `anime_diver_male.png`
 em `res://assets/art/characters/`. Essas imagens de alta resolucao **nao
 estao no repositorio GitHub**. O pacote separado continua sendo necessario.
 A textura de cada personagem ainda contem corpo e roupas ja compostos: a
