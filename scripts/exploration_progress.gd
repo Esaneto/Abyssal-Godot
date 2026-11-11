@@ -7,6 +7,7 @@ const MAX_STACK := 1000000
 const RESOURCE_NAMES := {
 	"abyssPickaxe": "Picareta abissal",
 	"emptyCylinder": "Cilindro de amostra",
+	"propulsionUnit": "Hidrojato de propulsao",
 	"seaMineral": "Minerio submarino",
 	"phosphorite": "Fosforita",
 	"ferromanganeseCrust": "Crosta ferromanganesifera",
@@ -44,14 +45,19 @@ const RESEARCH := {
 		"cost": {"seaMineral": 2}, "requires": [],
 		"detail": "Desbloqueia a pesquisa de sonar avancado."
 	},
+	"propulsionDrive": {
+		"label": "Motor de propulsao", "max": 3,
+		"cost": {"seaMineral": 5, "phosphorite": 2}, "requires": [],
+		"detail": "Aumenta bateria, impulso e recuperacao do hidrojato."
+	},
 	"sonar": {
 		"label": "Sonar de exploracao", "max": 3,
 		"cost": {"ferromanganeseCrust": 2, "phosphorite": 1}, "requires": ["sampler"],
 		"detail": "Amplia a area de cobertura do sonar."
 	}
 }
-const SHOP_ORDER := ["oxygenTank", "pressureSuit", "helmetLamp", "salvageTool", "sampler", "sonar"]
-const TOOL_IDS := ["abyssPickaxe", "emptyCylinder"]
+const SHOP_ORDER := ["oxygenTank", "pressureSuit", "helmetLamp", "salvageTool", "sampler", "sonar", "propulsionDrive"]
+const TOOL_IDS := ["abyssPickaxe", "emptyCylinder", "propulsionUnit"]
 var profile: Dictionary = {}
 var _auto_save: bool = true
 
@@ -82,13 +88,20 @@ func _ensure_starter_kit() -> void:
 	if not bool(profile.get("starter_granted", false)):
 		inventory["abyssPickaxe"] = maxi(1, int(inventory.get("abyssPickaxe", 0)))
 		inventory["emptyCylinder"] = maxi(1, int(inventory.get("emptyCylinder", 0)))
+		inventory["propulsionUnit"] = maxi(1, int(inventory.get("propulsionUnit", 0)))
 		profile["starter_granted"] = true
 		profile["inventory"] = inventory
 		_save()
-	elif int(inventory.get("emptyCylinder", 0)) < 1:
-		inventory["emptyCylinder"] = 1
-		profile["inventory"] = inventory
-		_save()
+	else:
+		# Existing saves automatically gain the reusable hydrojet without losing progress.
+		var changed := false
+		for id in TOOL_IDS:
+			if int(inventory.get(id, 0)) < 1:
+				inventory[id] = 1
+				changed = true
+		if changed:
+			profile["inventory"] = inventory
+			_save()
 
 func save_to_path(path: String) -> bool:
 	var file := FileAccess.open(path, FileAccess.WRITE)

@@ -13,6 +13,11 @@ const SWIM_ACCELERATION := 620.0
 const WATER_DRAG := 2.5
 const BUOYANCY := 28.0
 const SURFACE_Y := 75.0
+const TURN_RATE := 6.5
+const BOOST_ACCELERATION := 1550.0
+const BOOST_MAX_SPEED := 505.0
+const BATTERY_DRAIN := 35.0
+const BATTERY_RECHARGE := 16.0
 
 var oxygen_capacity := MAX_OXYGEN
 var safe_depth := 300.0
@@ -27,6 +32,16 @@ var is_moving := false
 var is_facing_right := true
 var appearance: Dictionary = Look.defaults()
 var anime_rig: Node2D = null
+var propulsion_bubbles: CPUParticles2D
+var collision_node: CollisionShape2D
+var swim_heading := 0.0
+var visual_heading := 0.0
+var equipped_tool := "abyssPickaxe"
+var propulsion_level := 0
+var propulsion_capacity := 100.0
+var propulsion_energy := 100.0
+var is_propelling := false
+var is_extracting := false
 
 func _ready() -> void:
 	collision_layer = 1
@@ -37,10 +52,13 @@ func _ready() -> void:
 	shape.height = 91.0
 	collision.shape = shape
 	collision.rotation = PI / 2.0
+	collision_node = collision
 	add_child(collision)
 	anime_rig = NativeRig.new()
 	add_child(anime_rig)
-	anime_rig.update_look(appearance, time_s, false, is_facing_right)
+	# The new illustrated rig is drawn from articulated geometry each frame.
+	anime_rig.visible = false
+	_create_propulsion_bubbles()
 	queue_redraw()
 
 func _physics_process(delta: float) -> void:
@@ -50,18 +68,35 @@ func _physics_process(delta: float) -> void:
 		Input.get_axis("move_up", "move_down")
 	).normalized()
 	is_moving = steering.length_squared() > 0.02
+	if is_moving:
+		swim_heading = steering.angle()
+	elif velocity.length() > 26.0:
+		swim_heading = velocity.angle()
 	if absf(steering.x) > 0.1:
 		is_facing_right = steering.x > 0.0
+	visual_heading = lerp_angle(visual_heading, swim_heading if is_moving or velocity.length()>26.0 else 0.0, minf(1.0, TURN_RATE*delta))
+	if collision_node != null:
+		collision_node.rotation = visual_heading + PI*0.5
 	depth_m = clampf((global_position.y - SURFACE_Y) / (21000.0 - SURFACE_Y), 0.0, 1.0) * 2200.0
 	# Slow depth-dependent currents. The character does not move by teleport.
 	current_force = Vector2(
 		21.0 * sin(global_position.y * 0.0025 + time_s * 0.18),
 		7.0 * cos(global_position.x * 0.0009 + time_s * 0.15)
 	)
+	# The miniature propulsion unit pushes through water, rather than teleporting.
+	var wants_boost := equipped_tool == "propulsionUnit" and Input.is_action_pressed("boost")
+	is_propelling = wants_boost and propulsion_energy > 0.7
+	var thrust_direction := steering if is_moving else Vector2.RIGHT.rotated(swim_heading)
 	swim_force = steering * SWIM_ACCELERATION + Vector2.UP * BUOYANCY + current_force
+	if is_propelling:
+		swim_force += thrust_direction * (BOOST_ACCELERATION * (1.0+float(propulsion_level)*0.13))
+		propulsion_energy = maxf(0.0, propulsion_energy-(BATTERY_DRAIN-float(propulsion_level)*2.0)*delta)
+	else:
+		propulsion_energy = minf(propulsion_capacity, propulsion_energy+(BATTERY_RECHARGE+float(propulsion_level)*2.5)*delta)
 	velocity += swim_force * delta
-	velocity *= exp(-WATER_DRAG * delta)
-	velocity = velocity.limit_length(MAX_SPEED)
+	velocity *= exp(-WATER_DRAG * (0.67 if is_propelling else 1.0) * delta)
+	var cap := BOOST_MAX_SPEED*(1.0+float(propulsion_level)*0.06) if is_propelling else MAX_SPEED*1.62
+	velocity = velocity.limit_length(cap)
 	move_and_slide()
 	global_position.x = clampf(global_position.x, 60.0, 23940.0)
 	if global_position.y <= SURFACE_Y:
@@ -86,36 +121,66 @@ func _physics_process(delta: float) -> void:
 		health = maxf(0.0, health - pressure_hazard * delta)
 	if health <= 0.0:
 		diver_died.emit()
-	if anime_rig != null:
-		anime_rig.update_look(appearance, time_s, is_moving, is_facing_right)
+	if propulsion_bubbles != null:
+		propulsion_bubbles.emitting = is_propelling
+		propulsion_bubbles.position = Vector2(-58.0, 10.0).rotated(visual_heading)
+		propulsion_bubbles.rotation = visual_heading
 	queue_redraw()
 
 func set_appearance(candidate: Dictionary) -> void:
 	appearance = Look.normalize(candidate)
-	if anime_rig != null:
-		anime_rig.update_look(appearance, time_s, is_moving, is_facing_right)
+	# Preserve the selected colors while the illustrated mesh is redrawn.
 	queue_redraw()
 
-func configure_equipment(oxygen_level: int, suit_level: int) -> void:
+func configure_equipment(oxygen_level: int, suit_level: int, motor_level: int = 0) -> void:
 	oxygen_capacity = MAX_OXYGEN * (1.0 + float(clampi(oxygen_level, 0, 5)))
 	safe_depth = 300.0 + float(clampi(suit_level, 0, 5)) * 180.0
 	oxygen = minf(oxygen, oxygen_capacity)
+	propulsion_level = clampi(motor_level, 0, 3)
+	propulsion_capacity = 100.0 + float(propulsion_level)*22.0
+	propulsion_energy = minf(propulsion_energy, propulsion_capacity)
 
 func recover() -> void:
 	oxygen = oxygen_capacity
 	health = MAX_HEALTH
 	time_without_air = 0.0
 	velocity = Vector2.ZERO
+	propulsion_energy = propulsion_capacity
+	is_propelling = false
+
+func set_equipped_tool(tool: String) -> void:
+	equipped_tool = tool
+	queue_redraw()
+
+func set_extracting(active: bool) -> void:
+	is_extracting = active
+
+func _create_propulsion_bubbles() -> void:
+	propulsion_bubbles = CPUParticles2D.new()
+	propulsion_bubbles.name = "HydrojetBubbles"
+	propulsion_bubbles.texture = NativeRig._bubble_texture()
+	propulsion_bubbles.amount = 60
+	propulsion_bubbles.lifetime = 0.78
+	propulsion_bubbles.explosiveness = 0.0
+	propulsion_bubbles.direction = Vector2.LEFT
+	propulsion_bubbles.spread = 20.0
+	propulsion_bubbles.gravity = Vector2(-5.0,-34.0)
+	propulsion_bubbles.initial_velocity_min = 72.0
+	propulsion_bubbles.initial_velocity_max = 170.0
+	propulsion_bubbles.scale_amount_min = 0.16
+	propulsion_bubbles.scale_amount_max = 0.43
+	propulsion_bubbles.color = Color(0.70,0.95,1.0,0.80)
+	propulsion_bubbles.local_coords = false
+	propulsion_bubbles.emitting = false
+	add_child(propulsion_bubbles)
 
 func _draw() -> void:
 	# PNGs installed: the MeshInstance2D child animates natively with
 	# AnimationPlayer and particles. Keep this renderer only as a fallback.
-	if anime_rig != null and anime_rig.has_visible_character():
-		return
+	# Animated line-art and colors remain available without external static PNGs.
 	# Side-view expedition diver: anatomy, layered neoprene, steel tanks and flexible fins.
 	# Every part is anchored to this CharacterBody2D; physics and hitbox remain unchanged.
-	var flip := 1.0 if is_facing_right else -1.0
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2(flip, 1.0))
+	draw_set_transform(Vector2.ZERO, visual_heading, Vector2.ONE)
 	var phase := time_s * (8.4 if is_moving else 2.0)
 	var kick := sin(phase) * (9.5 if is_moving else 2.2)
 	var breathe := sin(time_s * 1.55) * 1.2
@@ -216,10 +281,39 @@ func _draw() -> void:
 	draw_arc(Vector2(33, -17 + breathe), 18.0, PI * 0.95, PI * 1.85, 18, visor, 2.6, true)
 	draw_circle(Vector2(46, -12 + breathe), 5.0, Color("#122a35"))
 	draw_line(Vector2(47, -12 + breathe), Vector2(56, -7 + breathe), Color("#4d7d85"), 3.4, true)
-	Doll.draw_swimmer_handheld(self,appearance,breathe)
+	_draw_equipped_tool(breathe)
 	# Tiny respirator bubbles rise only near the actual regulator.
 	for k in range(3):
 		var rise := fposmod(time_s * (12.0 + float(k) * 3.0) + float(k) * 25.0, 67.0)
 		var p := Vector2(57.0 + sin(time_s * 1.6 + float(k)) * 4.0, -14.0 - rise)
 		draw_arc(p, 2.2 + float(k) * 0.7, 0, TAU, 12, Color(0.60, 0.93, 0.92, 0.45), 1.0, true)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_equipped_tool(breathe: float) -> void:
+	if equipped_tool == "propulsionUnit":
+		# Twin-nozzle electric water scooter with illuminated impellers.
+		draw_line(Vector2(-34,12),Vector2(-62,16),Color("#071a27"),17.0,true)
+		draw_line(Vector2(-34,12),Vector2(-62,16),Color("#3a7688"),11.0,true)
+		draw_rect(Rect2(-70,6,16,21),Color("#182b41"))
+		draw_rect(Rect2(-67,9,8,14),Color("#65ddd9"))
+		draw_arc(Vector2(-68,16),9.0,0,TAU,20,Color("#d5f5fa"),2.2,true)
+		draw_circle(Vector2(-70,16),3.2,Color("#f3b977"))
+		if is_propelling:
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-74,10),Vector2(-116-8.0*sin(time_s*26.0),16),
+				Vector2(-74,23)
+			]),Color(0.38,0.88,0.93,0.19))
+	elif equipped_tool == "abyssPickaxe":
+		var swing := sin(time_s*10.0)*0.28 if is_extracting else 0.0
+		draw_set_transform(Vector2(45,7),visual_heading+swing,Vector2.ONE)
+		draw_line(Vector2.ZERO,Vector2(19,20),Color("#b57e56"),6.0,true)
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(15,13),Vector2(19,-9),Vector2(34,-18),Vector2(32,-9),Vector2(22,17)
+		]),Color("#b7d6d7"))
+		draw_line(Vector2(18,-7),Vector2(32,-13),Color("#6ce5e9"),2.0,true)
+	elif equipped_tool == "emptyCylinder":
+		draw_rect(Rect2(42,-7,14,29),Color("#789baa"))
+		draw_rect(Rect2(44,-4,10,23),Color("#0c3950"))
+		draw_rect(Rect2(45,9,8,9),Color("#5be6db"))
+		draw_rect(Rect2(44,-10,10,4),Color("#f6ce91"))
+		draw_circle(Vector2(49,-12),3.0,Color("#97e0e6"))

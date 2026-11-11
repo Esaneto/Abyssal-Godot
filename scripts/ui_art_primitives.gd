@@ -60,6 +60,13 @@ static func item(c: CanvasItem, id: String, p: Vector2, scale: float = 1.0) -> v
 			poly(c, [Vector2(-13,-12),Vector2(11,-13),Vector2(22,-5),Vector2(-19,-5)], Color("#39dce8"))
 			poly(c, [Vector2(-5,-8),Vector2(1,-8),Vector2(13,22),Vector2(7,26)], Color("#8d6848"))
 			c.draw_line(Vector2(-4,-6),Vector2(10,21),Color("#ffc875"),2.8,true)
+		"propulsionUnit":
+			poly(c,[Vector2(-23,-9),Vector2(-10,-20),Vector2(13,-20),Vector2(24,-7),Vector2(18,13),Vector2(-16,13)],Color("#183344"))
+			poly(c,[Vector2(-14,-15),Vector2(11,-15),Vector2(18,-6),Vector2(-18,-6)],Color("#59a6ae"))
+			c.draw_circle(Vector2(-16,14),9.0,Color("#6ccfd2"))
+			c.draw_circle(Vector2(-16,14),5.1,Color("#112f46"))
+			c.draw_line(Vector2(-3,-3),Vector2(18,3),Color("#e4bc7e"),3.0,true)
+			c.draw_circle(Vector2(8,-3),3.0,Color("#72f4ec"))
 		"emptyCylinder", "oilCylinder", "gasCylinder":
 			var fluid := Color("#21c8bd") if id=="gasCylinder" else Color("#5c4d36") if id=="oilCylinder" else Color("#145676")
 			poly(c,[Vector2(-11,-19),Vector2(11,-19),Vector2(13,17),Vector2(8,24),Vector2(-8,24),Vector2(-13,17)],Color("#afcad1"))

@@ -38,7 +38,7 @@ const PASSAGE_ARCHES := [
 ]
 
 var cinematic_3d: Node
-var visual_3d_enabled := true
+var visual_3d_enabled := false # Inked anime 2.5D is primary; V previews original 3D.
 var diver: CharacterBody2D
 var camera: Camera2D
 var discovered: Dictionary = {}
@@ -156,7 +156,8 @@ func begin_expedition() -> void:
 	diver.global_position = checkpoint if is_navigable(checkpoint, 67.0) else SPAWN
 	if progress != null:
 		diver.call("configure_equipment", progress.research_level("oxygenTank"),
-			progress.research_level("pressureSuit"))
+			progress.research_level("pressureSuit"), progress.research_level("propulsionDrive"))
+		diver.set_equipped_tool(progress.selected_tool())
 		# Appearance is a shared local paper-doll, separate from equipment bonuses.
 		diver.set_appearance(progress.appearance_snapshot())
 	diver.recover()
@@ -219,10 +220,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cycle_field_guide(-1)
 		elif event.keycode == KEY_K and field_guide_open:
 			_cycle_field_guide(1)
-		elif event.keycode == KEY_1 and progress != null:
-			progress.select_tool("abyssPickaxe")
-		elif event.keycode == KEY_2 and progress != null:
-			progress.select_tool("emptyCylinder")
+		elif event.keycode in [KEY_1, KEY_2, KEY_3] and progress != null:
+			var id := ["abyssPickaxe","emptyCylinder","propulsionUnit"][int(event.keycode - KEY_1)]
+			if progress.select_tool(id):
+				diver.set_equipped_tool(id)
+				_set_status("EQUIPADO: " + str(ProgressScript.RESOURCE_NAMES[id]))
 		elif event.keycode == KEY_F and not nearest.is_empty():
 			discovered[nearest["id"]] = true
 			last_observed_id = nearest["id"]
@@ -624,6 +626,7 @@ func _refresh_deposits() -> void:
 			best_distance = dist
 
 func _update_extraction(delta: float) -> void:
+	diver.set_extracting(false)
 	if progress == null or inventory_open or field_guide_open or chart_open:
 		extraction_time = 0.0
 		extraction_target_id = ""
@@ -640,11 +643,12 @@ func _update_extraction(delta: float) -> void:
 	if progress.selected_tool() != required:
 		extraction_time = 0.0
 		if time_s > status_until:
-			_set_status("EQUIPE A FERRAMENTA CORRETA [1 / 2]")
+			_set_status("EQUIPE A FERRAMENTA CORRETA [1 PICARETA / 2 CILINDRO]")
 		return
 	if progress.get_count(required) < 1:
 		extraction_time = 0.0
 		return
+	diver.set_extracting(true)
 	extraction_time += delta
 	if extraction_time < deposits.duration_for(str(nearest_deposit["type"])):
 		return
@@ -763,13 +767,13 @@ func _sonar_level() -> int:
 	return progress.research_level("sonar") if progress != null else 0
 
 func _draw_inventory_panel(x: float, y: float) -> void:
-	var p := Vector2(x + 315, y + 175)
-	draw_rect(Rect2(p, Vector2(740, 408)), Color(0.013, 0.058, 0.082, 0.96))
-	draw_rect(Rect2(p + Vector2(8, 8), Vector2(724, 391)), Color("#0d3443"))
+	var p := Vector2(x + 315, y + 158)
+	draw_rect(Rect2(p, Vector2(740, 445)), Color(0.013, 0.058, 0.082, 0.96))
+	draw_rect(Rect2(p + Vector2(8, 8), Vector2(724, 427)), Color("#0d3443"))
 	_text("INVENTARIO DE EXPLORACAO  [I FECHA]", p + Vector2(25, 41), 24, Color("#f1d29e"))
-	_text("1 PICARETA   |   2 CILINDRO   |   G SEGURAR PARA EXTRAIR",
+	_text("1 PICARETA  |  2 CILINDRO  |  3 HIDROJATO  |  SHIFT IMPULSO",
 		p + Vector2(25, 69), 15, Color("#aedede"))
-	var order := ["abyssPickaxe", "emptyCylinder", "seaMineral", "phosphorite",
+	var order := ["abyssPickaxe", "emptyCylinder", "propulsionUnit", "seaMineral", "phosphorite",
 		"ferromanganeseCrust", "polymetallicNodule", "hydrothermalSulfide",
 		"oilCylinder", "gasCylinder", "salvageMetal", "deepCrystal"]
 	if progress == null:
@@ -784,7 +788,7 @@ func _draw_inventory_panel(x: float, y: float) -> void:
 		_text(str(ProgressScript.RESOURCE_NAMES.get(id, id)), pos + Vector2(37, 25), 14, Color("#cde9e8"))
 		_text("x%d" % progress.get_count(id), pos + Vector2(280, 25), 14, Color("#f5d2a6"))
 	_text("FERRAMENTA EQUIPADA: %s" % str(ProgressScript.RESOURCE_NAMES.get(progress.selected_tool(), "")),
-		p + Vector2(26, 382), 15, Color("#f5d2a6"))
+		p + Vector2(26, 421), 15, Color("#f5d2a6"))
 
 func _draw_navigation_chart(x: float, y: float) -> void:
 	if progress == null:
