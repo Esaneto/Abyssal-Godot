@@ -105,9 +105,9 @@ func _build_leviathan_shadow() -> void:
 	var shadow := Color("#142d3c")
 	var ridge := Color("#244657")
 	Shapes.ellipsoid(ocean_shadow,"Muscular flank",Vector3(-0.18,0,0),
-		Vector3(1.50,0.44,0.48),shadow,0.06)
+		Vector3(1.67,0.33,0.42),shadow,0.0)
 	Shapes.ellipsoid(ocean_shadow,"Tapered head",Vector3(1.08,0.0,0),
-		Vector3(0.51,0.32,0.40),shadow.lightened(0.03),0.11)
+		Vector3(0.54,0.26,0.34),shadow.darkened(0.03),0.0)
 	Shapes.fin(ocean_shadow,"Abyssal crest",Vector3(-0.52,0.23,0),
 		Vector3(-0.14,1.03,0),Vector3(0.32,0.24,0),ridge)
 	Shapes.fin(ocean_shadow,"Abdominal keel",Vector3(-0.61,-0.27,0),
@@ -131,24 +131,55 @@ func _build_leviathan_shadow() -> void:
 			Vector3(x,y,0.45),Vector3(0.025,0.023,0.015),
 			Color("#3f8990"),0.08,0.30)
 	Shapes.ellipsoid(ocean_shadow,"Reflective eye",Vector3(1.32,0.08,0.34),
-		Vector3(0.050,0.044,0.027),Color("#699da2"),0.10,0.32)
+		Vector3(0.035,0.031,0.025),Color("#65999b"),0.03,0.14)
+	# Angled jaws, gill grooves and scar ridges make this a creature, not a glossy oval.
+	Shapes.ellipsoid(ocean_shadow,"Lower jaw shadow",Vector3(1.37,-0.18,0.11),
+		Vector3(0.37,0.07,0.26),Color("#071c27"),0.0)
+	for g in range(4):
+		var gx := 0.80-float(g)*0.16
+		Shapes.tube(ocean_shadow,"Gill crease",Vector3(gx,0.11,0.37),
+			Vector3(gx-0.03,-0.13,0.39),0.012,Color("#0e2432"))
+	for ridge_id in range(3):
+		var rx := -0.84+float(ridge_id)*0.23
+		Shapes.fin(ocean_shadow,"Uneven dorsal finlet",Vector3(rx,0.29,-0.06),
+			Vector3(rx+0.12,0.45+float(ridge_id%2)*0.09,-0.06),
+			Vector3(rx+0.27,0.27,-0.06),ridge.darkened(0.22))
 
 func _coral_group(pos: Vector3, seed_value: int) -> void:
 	var cluster := Node3D.new()
 	cluster.position = pos
 	stage.add_child(cluster)
-	for k in range(6):
-		var a := float(k)*TAU/6.0
-		var tint := Color("#d97b9e") if k%3==0 else Color("#e4ad6f") if k%3==1 else Color("#56c6ae")
-		var start := Vector3(cos(a)*0.24,0,sin(a)*0.22)
-		var top := start+Vector3(cos(a)*0.45,0.75+float(k%3)*0.17,sin(a)*0.2)
-		Shapes.tube(cluster,"Coral branch",start,top,0.055,tint)
-		Shapes.tube(cluster,"Coral tips",start.lerp(top,0.6),top+Vector3(0.17,0.18,0.05),0.029,tint)
-	for k in range(3):
+	# Muted mineral coral with branched growth and visible living polyps.
+	for k in range(8):
+		var a := float(k)*TAU/8.0
+		var tint := Color("#917468") if k%3==0 else Color("#577b73") if k%3==1 else Color("#756983")
+		var start := Vector3(cos(a)*0.30,0,sin(a)*0.28)
+		var branch_height := 0.45+float((k+seed_value)%4)*0.20
+		var bend := Vector3(cos(a)*0.24,branch_height,sin(a)*0.16)
+		var top := start+bend
+		Shapes.tube(cluster,"Irregular coral trunk",start,top,0.040,tint)
+		for tip_index in range(2):
+			var intermediate := start.lerp(top,0.45+float(tip_index)*0.20)
+			var direction := -1.0 if tip_index==0 else 1.0
+			var twig := intermediate+Vector3(direction*0.14,0.22,direction*0.075)
+			Shapes.tube(cluster,"Coral offshoot",intermediate,twig,0.020,tint.lightened(0.12))
+			Shapes.ellipsoid(cluster,"Polyp crown",twig,Vector3(0.045,0.045,0.040),
+				tint.lightened(0.15),0.0)
+	# Swaying leaf clusters have stems plus separately curved blades, not cylinders.
+	for k in range(4):
 		var sway := Node3D.new()
-		sway.position = Vector3(float(k-1)*0.44,0,-0.12)
+		sway.name = "CurrentsAnimatedKelp"
+		sway.position = Vector3(float(k-1)*0.38,0,-0.10-float(k%2)*0.15)
 		cluster.add_child(sway)
-		Shapes.ellipsoid(sway,"Kelp blade",Vector3(0,0.73,0),Vector3(0.08,0.88,0.045),Color("#3f9789"))
+		Shapes.tube(sway,"Kelp stalk",Vector3(0,0,0),Vector3(0.06,1.40,0),
+			0.026,Color("#3c6a62"))
+		for blade_id in range(5):
+			var y := 0.22+float(blade_id)*0.245
+			var sign := -1.0 if blade_id%2==0 else 1.0
+			var leaf := Shapes.ellipsoid(sway,"Serrated kelp blade",
+				Vector3(sign*0.11,y,0),Vector3(0.10,0.22,0.034),
+				Color("#507e73") if blade_id%3==0 else Color("#3d675f"),0.0)
+			leaf.rotation.z = sign*0.48
 		sway.set_meta("seed",float(seed_value+k))
 		foliage.append(sway)
 
