@@ -141,9 +141,12 @@ static func draw_cabin(canvas: CanvasItem, candidate: Dictionary,
 	# An actual cropped portrait of THE SAME swimmer source. The art is live:
 	# a subtle breathing translation, separately moving holographic glints and
 	# a panel below stay independent of the cockpit, not a screenshot overlay.
-	var image_rect := Rect2(645.0, 125.0, 765.0, 665.0)
-	var bob := sin(time_s * 1.16) * 2.0
-	var dest := Rect2(-71.0, 243.0 + bob, 450.0, 385.0)
+	var original_size := texture.get_size()
+	# Portrait dynamically crops the imported image size. No hard-coded 1448px assumptions.
+	var image_rect := Rect2(original_size.x * 0.44, original_size.y * 0.13,
+		original_size.x * 0.55, original_size.y * 0.58)
+	var bob := sin(time_s * 1.16) * 1.5
+	var dest := Rect2(-52.0, 237.0 + bob, 445.0, 397.0)
 	canvas.draw_texture_rect_region(texture, dest, image_rect)
 	var glow := Color("#4cebf3")
 	canvas.draw_line(Vector2(32.0, 605.0), Vector2(372.0, 605.0),
