@@ -7,11 +7,12 @@ const UIArt = preload("res://scripts/ui_art_primitives.gd")
 const Wardrobe = preload("res://scripts/wardrobe_ui.gd")
 const Cabin3D = preload("res://scripts/visuals3d/cabin_renderer.gd")
 const AnimeCabin = preload("res://scripts/anime_cabin_finish.gd")
-const AnimePilot = preload("res://scripts/anime_diver_art.gd")
+const CabinPilot = preload("res://scripts/anime_cabin_pilot.gd")
 const Look = preload("res://scripts/diver_appearance.gd")
 var expedition: Node2D
 var progress: RefCounted
 var cabin_scene: Node
+var cabin_pilot: Node
 var lab_open := false
 var lab_selected := 0
 var lab_feedback := ""
@@ -43,6 +44,9 @@ func _ready() -> void:
 	cabin_scene = Cabin3D.new()
 	cabin_scene.name = "CinematicCabin3D"
 	add_child(cabin_scene)
+	cabin_pilot = CabinPilot.new()
+	cabin_pilot.name = "OriginalAnimatedPilot"
+	add_child(cabin_pilot)
 	expedition = ExpeditionScript.new()
 	expedition.name = "ExpedicaoOceanica"
 	expedition.process_mode = Node.PROCESS_MODE_DISABLED
@@ -55,8 +59,11 @@ func _process(delta: float) -> void:
 	time_s += delta
 	if cabin_scene != null:
 		cabin_scene.call("set_enabled",not in_open_sea)
-		if not in_open_sea:
-			cabin_scene.call("update_live",time_s,progress.appearance_snapshot())
+	if cabin_pilot != null:
+		cabin_pilot.call("set_enabled",not in_open_sea)
+	if not in_open_sea:
+		cabin_scene.call("update_live",time_s,progress.appearance_snapshot())
+		cabin_pilot.call("update_appearance",progress.appearance_snapshot(),time_s)
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -182,9 +189,10 @@ func _draw() -> void:
 		if cabin_tex != null:
 			draw_texture_rect(cabin_tex,Rect2(0.0,0.0,1280.0,720.0),false)
 		AnimeCabin.paint(self,time_s)
-		# Portrait cut from the same *new, bundled* anime pilot artwork; breathing and highlights live.
-		if not AnimePilot.draw_cabin(self,progress.appearance_snapshot(),time_s):
-			push_warning("High-resolution cabin portrait missing")
+		# Upright character independently animated in transparent SubViewport.
+		var pilot_texture: Texture2D = cabin_pilot.call("texture")
+		if pilot_texture != null:
+			draw_texture_rect(pilot_texture,Rect2(17.0,126.0,357.0,584.0),false)
 		CabinArt.paint_ui(self,time_s,menu_selected,progress,menu_feedback)
 	else:
 		CabinArt.paint(self,time_s,menu_selected,progress,menu_feedback)

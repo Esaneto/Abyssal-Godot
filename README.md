@@ -20,6 +20,10 @@ Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza c
 - **V**: alternar ilustracao anime 2D e renderizador 3D de comparacao no Mar Aberto. 3D fica suspenso quando nao esta em uso.
 
 ## Direcao de arte: Abyssal anime sombrio
+- As texturas de alta resolucao de mergulhador(a) fazem parte do proprio repositorio em `assets/art/character/abyssal_diver_*_animated_art.webp`, com malha deformavel e animacao do nado, cabelo e nadadeiras.
+- A cabine possui arte **propria e distinta** do personagem ereto no comando: `assets/art/character/abyssal_pilot_cabin_*.webp`, animada por `scripts/anime_cabin_pilot.gd` e `shaders/animated_cabin_pilot.gdshader`. Nao depende da antiga combinacao `cabin_layer_*` nem do recorte incorreto do personagem nadando.
+- As artes WebP sao imagens-base fixas; **o personagem nunca e exibido sem movimento**: malhas de vertices e efeitos atualizam a cada quadro. Rigging esquelético completo dos membros ainda nao esta finalizado.
+
 A cabine utiliza o personagem vetorial anime em camadas SVG com movimento de cabelo e respiracao, composto sobre o oceano tridimensional. O Mar Aberto agora utiliza o mergulhador dinamico de `scripts/anime_swimmer_ink.gd`, com bracos, pernas, nadadeiras, rosto, equipamentos e cabelo em ilustracao procedural. Raias curvas e animadas substituem os antigos poligonos angulares. A nova iluminacao reduz a saturacao e a luminosidade excessiva, e o HUD foi reduzido a instrumentos de sobrevivencia + tres ferramentas; os minerios permanecem acessiveis pelo inventario `I`.
 
 Isso e uma etapa de direcao de arte, nao um pacote de ilustracoes finais AAA. A fisica aquatica, motor, mapa e salvamento permanecem intocados.

@@ -27,6 +27,11 @@ func _smoke() -> void:
 		push_error("Renderizador 3D de oceano indisponivel")
 		quit(10)
 		return
+	var command_bridge = main.get_node_or_null("OriginalAnimatedPilot")
+	if command_bridge == null or command_bridge.call("texture") == null:
+		push_error("Animated cabin pilot not initialized")
+		quit(22)
+		return
 	var high_res_art = load("res://scripts/anime_diver_art.gd")
 	if high_res_art.texture_for("female") == null or high_res_art.texture_for("male") == null:
 		push_error("Committed high-resolution diver assets failed to load")
