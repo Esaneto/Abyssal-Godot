@@ -107,8 +107,9 @@ func synchronize(game_world: Node2D, delta: float) -> void:
 	swimmer.call("animate",t,true,world.diver.velocity.length()>8.0,world.diver.is_facing_right,world.diver.visual_heading)
 	swimmer.call("set_tool_state",world.diver.equipped_tool,world.diver.is_propelling,world.diver.is_extracting,t)
 	_update_propulsion_bubbles(diver_pos,center)
-	spot.position = swimmer.position + Vector3(0,0,2.2)
-	spot.rotation_degrees = Vector3(0,0,0)
+	var forward := Vector2.RIGHT.rotated(world.diver.visual_heading)
+	spot.position = swimmer.position + Vector3(forward.x*0.45,-forward.y*0.45,1.8)
+	spot.look_at(spot.position+Vector3(forward.x*7.0,-forward.y*7.0,-0.7),Vector3(0,0,1))
 	var sector := Vector2i(int(floor(center.x/420.0)),int(floor(center.y/420.0)))
 	if sector != last_sector:
 		last_sector = sector

@@ -29,5 +29,5 @@ static func paint(c: CanvasItem, t: float) -> void:
 	# Visible labels for the industrial layout.
 	c.draw_string(ThemeDB.fallback_font,Vector2(29,49),"A B Y S S A L    /    CENTRO DE COMANDO",
 		HORIZONTAL_ALIGNMENT_LEFT,-1,13,Color(0.79,0.90,0.89,0.85))
-	c.draw_string(ThemeDB.fallback_font,Vector2(963,49),"SISTEMAS OCEANICOS   •   ONLINE LOCAL",
+	c.draw_string(ThemeDB.fallback_font,Vector2(963,49),"SISTEMAS OCEANICOS   •   MODO LOCAL",
 		HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color(0.86,0.69,0.48,0.79))

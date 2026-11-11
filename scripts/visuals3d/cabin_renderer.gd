@@ -187,6 +187,7 @@ func _build_pilot() -> void:
 	pilot.position = Vector3(x,-1.88,1.35)
 	pilot.scale = Vector3.ONE*0.98
 	stage.add_child(pilot)
+	pilot.call("set_tool_state","none",false,false,0.0)
 
 func update_live(time_value: float, appearance: Dictionary) -> void:
 	clock = time_value

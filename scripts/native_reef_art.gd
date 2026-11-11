@@ -238,15 +238,16 @@ static func foreground(c: CanvasItem, area: Rect2, t: float, depth: float) -> vo
 			c.draw_line(start,tip,Color(0.04,0.23,0.28,0.37),6.5,true)
 			c.draw_line(start+Vector2(1,0),tip,Color(0.19,0.53,0.50,0.17),2.2,true)
 
-static func flashlight(c: CanvasItem, pos: Vector2, facing_right: bool, t: float, depth: float) -> void:
-	# Always present but subtle in shallows, brighter and narrower beyond the twilight zone.
-	var dir := 1.0 if facing_right else -1.0
-	var intensity := 0.022+clampf(depth/720.0,0.0,1.0)*0.043
-	var start := pos+Vector2(40.0*dir,-9.0)
-	var end := start+Vector2(410.0*dir,0)
-	UI.poly(c,[start+Vector2(0,-6),end+Vector2(0,-101),end+Vector2(0,101),start+Vector2(0,8)],
+static func flashlight(c: CanvasItem, pos: Vector2, heading: float, t: float, depth: float) -> void:
+	# Beam rotates with the diver across all 360 degrees, including vertical swimming.
+	var forward := Vector2.RIGHT.rotated(heading)
+	var normal := forward.orthogonal()
+	var intensity := 0.020+clampf(depth/720.0,0.0,1.0)*0.045
+	var start := pos+forward*40.0-normal*9.0
+	var end := start+forward*410.0
+	UI.poly(c,[start-normal*6.0,end-normal*101.0,end+normal*101.0,start+normal*8.0],
 		Color(0.56,0.93,0.99,intensity))
-	UI.poly(c,[start+Vector2(0,-3),end+Vector2(0,-37),end+Vector2(0,37),start+Vector2(0,5)],
+	UI.poly(c,[start-normal*3.0,end-normal*37.0,end+normal*37.0,start+normal*5.0],
 		Color(0.75,0.97,1.0,intensity*0.55))
 	c.draw_circle(start,5.0,Color("#98ffff"))
 	c.draw_circle(start,13.0,Color(0.26,0.95,1.0,0.10))

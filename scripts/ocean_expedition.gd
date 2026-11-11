@@ -420,7 +420,7 @@ func _draw() -> void:
 	ReefArt.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	AnimeFinish.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	_draw_deep_visibility(area)
-	ReefArt.flashlight(self,diver.position,diver.is_facing_right,time_s,depth_at_y(diver.position.y))
+	ReefArt.flashlight(self,diver.position,diver.visual_heading,time_s,depth_at_y(diver.position.y))
 	_draw_hud()
 
 func _draw_water(area: Rect2) -> void:
@@ -713,13 +713,14 @@ func _draw_deep_visibility(area: Rect2) -> void:
 		]), outside)
 	# Narrow torch cone keeps the player oriented at night and below 200m.
 	if depth > 180.0:
-		var facing := 1.0 if diver.is_facing_right else -1.0
-		var end_pos := focus + Vector2(530.0 * facing, 14.0)
+		var forward := Vector2.RIGHT.rotated(diver.visual_heading)
+		var normal := forward.orthogonal()
+		var end_pos := focus + forward * 530.0
 		draw_colored_polygon(PackedVector2Array([
-			focus + Vector2(22.0 * facing, -13.0),
-			end_pos + Vector2(0.0, -84.0),
-			end_pos + Vector2(0.0, 84.0),
-			focus + Vector2(22.0 * facing, 13.0)
+			focus + forward*22.0 - normal*13.0,
+			end_pos - normal*84.0,
+			end_pos + normal*84.0,
+			focus + forward*22.0 + normal*13.0
 		]), Color(0.12, 0.67, 0.69, 0.026))
 
 func _draw_hud() -> void:
