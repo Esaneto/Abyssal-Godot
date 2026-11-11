@@ -11,6 +11,7 @@ const NativeHUD = preload("res://scripts/abyss_hud_immersive.gd")
 const Ocean3D = preload("res://scripts/visuals3d/ocean_renderer.gd")
 const AnimeFinish = preload("res://scripts/anime_ocean_finish.gd")
 const AmbientLife = preload("res://scripts/ambient_marine_life.gd")
+const CinematicReveal = preload("res://scripts/cinematic_reveal_lighting.gd")
 
 const MAP_W := 24000.0
 const MAP_H := 21000.0
@@ -189,6 +190,8 @@ func _process(delta: float) -> void:
 	time_s += delta
 	sky_time += delta
 	_update_nearest()
+	# The living sprite is part of the darkness, never a bright sticker.
+	diver.modulate = CinematicReveal.diver_tint(depth_at_y(diver.position.y),_sunlight())
 	resource_refresh -= delta
 	if resource_refresh <= 0.0:
 		resource_refresh = 0.33
@@ -423,7 +426,8 @@ func _draw() -> void:
 	ReefArt.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	AnimeFinish.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	AnimeFinish.film_grade(self,area,diver.position,time_s,_sunlight(),depth_at_y(diver.position.y))
-	_draw_deep_visibility(area)
+	CinematicReveal.grade(self,area,diver.position,diver.visual_heading,
+		depth_at_y(diver.position.y),_sunlight(),time_s)
 	ReefArt.flashlight(self,diver.position,diver.visual_heading,time_s,depth_at_y(diver.position.y))
 	_draw_hud()
 
