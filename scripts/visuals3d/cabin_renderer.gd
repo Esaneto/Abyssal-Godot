@@ -189,10 +189,12 @@ func _build_instruments() -> void:
 	# Actual 3D consoles sit behind the existing interactive Godot menu.
 	Shapes.box(stage,"Main command pedestal",Vector3(1.35,-1.72,2.55),
 		Vector3(8.5,1.28,1.6),Color("#202b42"),0.58)
-	Shapes.box(stage,"Beveled display bezel",Vector3(1.15,0.0,1.64),
-		Vector3(7.2,3.48,0.36),Color("#1b2c41"),0.56)
-	Shapes.box(stage,"Satin display glass",Vector3(1.15,0.0,1.84),
-		Vector3(6.85,3.15,0.05),Color("#0b3042"),0.34,0.25)
+	# Remove the old wall-sized black screen. It obscured the living ocean.
+	# Compact physical instrumentation stays on the dashboard below the glass.
+	Shapes.box(stage,"Compact sonar bezel",Vector3(2.38,-1.29,2.10),
+		Vector3(1.98,0.70,0.22),Color("#1b2c41"),0.46)
+	Shapes.box(stage,"Live sonar glass",Vector3(2.38,-1.29,2.24),
+		Vector3(1.79,0.55,0.04),Color("#153d49"),0.28,0.10)
 	for i in range(13):
 		var x := -2.0+float(i)*0.54
 		Shapes.box(stage,"Copper capacitive strip",Vector3(x,-1.83,3.39),
