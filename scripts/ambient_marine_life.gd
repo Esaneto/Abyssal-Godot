@@ -47,21 +47,20 @@ static func draw_ambient(c: CanvasItem, area: Rect2, seconds: float, depth: floa
 
 static func _fish(c: CanvasItem, at: Vector2, length: float, facing: float,
 		seconds: float, alpha: float) -> void:
+	# Subpixel-safe fish strokes avoid polygon triangulation at 20,000px depth.
+	# Tail and spine are distinct animated parts, not fixed sprite stamps.
 	var pulse := sin(seconds*4.5)
 	var tone := Color(0.22,0.39,0.45,alpha)
 	var light := Color(0.48,0.64,0.68,alpha*0.42)
-	var front := at+Vector2(length*facing,0)
-	var tail := at-Vector2(length*facing*0.85,0)
-	c.draw_colored_polygon(PackedVector2Array([
-		front,at+Vector2(-0.7*facing,-length*0.34),
-		tail,at+Vector2(-0.7*facing,length*0.34)
-	]),tone)
-	var tail_tip := tail+Vector2(-length*facing*0.61,0)
-	c.draw_colored_polygon(PackedVector2Array([
-		tail,tail_tip+Vector2(0,-length*0.53+pulse*0.50),
-		tail_tip+Vector2(0,length*0.53+pulse*0.50)
-	]),tone)
-	c.draw_line(at+Vector2(0,-length*0.15),front,light,0.65,true)
+	var front := at+Vector2(length*facing,0.0)
+	var tail := at-Vector2(length*facing*0.85,0.0)
+	var rear := tail-Vector2(length*facing*0.61,0)
+	c.draw_line(tail,front,tone,maxf(1.3,length*0.60),true)
+	c.draw_line(tail,front+Vector2(0,-length*0.12),light,0.7,true)
+	c.draw_line(tail,rear+Vector2(0,-length*0.46+pulse*0.35),
+		tone,maxf(0.8,length*0.19),true)
+	c.draw_line(tail,rear+Vector2(0,length*0.46+pulse*0.35),
+		tone,maxf(0.8,length*0.19),true)
 
 static func draw_lurking_depth(c: CanvasItem, area: Rect2, seconds: float, depth: float) -> void:
 	# Rare remote silhouettes at depth: deliberately non-interactive parallax art.
