@@ -3,6 +3,9 @@ extends RefCounted
 ## Distinct silhouettes, no shooter mechanics. Depths in approximate GAME meters.
 ## A creature's illustrated longest dimension is never < 40% of the diver length.
 
+const MANTA_SKIN = preload("res://assets/art/fauna/manta_biological_skin.webp")
+const EAGLE_SKIN = preload("res://assets/art/fauna/eagle_biological_skin.webp")
+const TURTLE_SKIN = preload("res://assets/art/fauna/turtle_carpax_skin.webp")
 const DIVER_LENGTH_PX := 104.0
 const MIN_LENGTH_PX := DIVER_LENGTH_PX * 0.4
 
@@ -159,13 +162,14 @@ static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: f
 				Vector2(-31,12),Vector2(-35,5)
 			]),6)
 			canvas.draw_colored_polygon(body,Color("#172c3a"))
+			_skin_on_living_mesh(canvas,body,MANTA_SKIN,Rect2(-70,-58,133,115))
 			var mantle := _smooth_outline(PackedVector2Array([
 				Vector2(-39,-1),Vector2(-18,-10),Vector2(1,-22-flap*0.35),
 				Vector2(24,-16),Vector2(44,-5),Vector2(45,5),
 				Vector2(24,14),Vector2(1,23+flap*0.35),
 				Vector2(-19,11)
 			]),5)
-			canvas.draw_colored_polygon(mantle,Color("#385563").lerp(Color("#607c87"),light*0.34))
+			canvas.draw_colored_polygon(mantle,Color(0.15,0.26,0.32,0.14+light*0.07))
 			var tipshade := _smooth_outline(PackedVector2Array([
 				Vector2(-26,-9),Vector2(-16,-31-flap),Vector2(2,-38-flap*0.7),
 				Vector2(12,-25),Vector2(6,-17),Vector2(-7,-13)
@@ -204,12 +208,13 @@ static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: f
 				Vector2(-17,22+flap),Vector2(-27,9)
 			]),6)
 			canvas.draw_colored_polygon(outline,Color("#172d3a"))
+			_skin_on_living_mesh(canvas,outline,EAGLE_SKIN,Rect2(-65,-53,129,106))
 			var upper := _smooth_outline(PackedVector2Array([
 				Vector2(-35,-1),Vector2(-15,-11),Vector2(3,-28-flap*0.7),
 				Vector2(25,-16),Vector2(45,0),Vector2(25,13),
 				Vector2(3,28+flap*0.7),Vector2(-15,12)
 			]),6)
-			canvas.draw_colored_polygon(upper,Color("#315867").lerp(Color("#547d82"),light*0.27))
+			canvas.draw_colored_polygon(upper,Color(0.16,0.33,0.36,0.12+light*0.06))
 			canvas.draw_polyline(outline,Color(0.50,0.75,0.76,0.65),1.3,true)
 			_line(canvas,Vector2(-38,0),Vector2(-117,sin(time_s*0.97)*10.0),Color("#405e6c"),1.7)
 			for k in range(29):
@@ -237,7 +242,9 @@ static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: f
 			_oval(canvas,Vector2(-4,0),Vector2(29,23),Color("#1c5458"))
 			_oval(canvas,Vector2(-4,-2),Vector2(26,20),Color("#70aa85"))
 			_oval(canvas,Vector2(-4,-2),Vector2(23,17),Color("#437879"))
-			# Five hexagonal shell plates with contrasting thin golden seams.
+			# Natural scute pigment follows shell as flippers animate.
+			canvas.draw_texture_rect(TURTLE_SKIN,Rect2(-31,-24,54,43),false,Color(1,1,1,0.84))
+			# Five animated shell seams remain independent of the skin.
 			for k in range(5):
 				var theta := TAU*float(k)/5.0
 				var x := -4.0+cos(theta)*13.0
@@ -379,3 +386,16 @@ static func _smooth_outline(points: PackedVector2Array, subdivisions: int = 5) -
 				(p0*2.0-p1*5.0+p2*4.0-p3)*t2+
 				(-p0+p1*3.0-p2*3.0+p3)*t3))
 	return result
+
+## Biological pigment is sampled onto a deformed mesh, never just a static sticker.
+static func _skin_on_living_mesh(c: CanvasItem, contour: PackedVector2Array,
+		tissue: Texture2D, atlas: Rect2) -> void:
+	var coords := PackedVector2Array()
+	var tint := PackedColorArray()
+	for point in contour:
+		coords.append(Vector2(
+			clampf((point.x-atlas.position.x)/atlas.size.x,0.0,1.0),
+			clampf((point.y-atlas.position.y)/atlas.size.y,0.0,1.0)
+		))
+		tint.append(Color.WHITE)
+	c.draw_polygon(contour,tint,coords,tissue)
