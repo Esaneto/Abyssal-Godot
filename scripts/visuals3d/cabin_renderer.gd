@@ -194,11 +194,13 @@ func update_live(time_value: float, appearance: Dictionary) -> void:
 	clock = time_value
 	if viewport == null:
 		return
-	var serialized := JSON.stringify(appearance)
-	if serialized != previous_look:
-		previous_look = serialized
-		pilot.call("set_appearance",appearance)
-	pilot.call("animate",clock,false,false,true)
+	# The pilot is illustrated in layered SVG; only animate 3D pilot when enabled.
+	if pilot != null:
+		var serialized := JSON.stringify(appearance)
+		if serialized != previous_look:
+			previous_look = serialized
+			pilot.call("set_appearance",appearance)
+		pilot.call("animate",clock,false,false,true)
 	var solar := 0.55+0.45*cos(clock*TAU/420.0)
 	sun.light_energy = 0.18+0.75*solar
 	var color := Color("#020c1a").lerp(Color("#0c4156"),solar)
