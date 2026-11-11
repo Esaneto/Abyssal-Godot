@@ -18,6 +18,7 @@ var mask_glass: MeshInstance3D
 var body_id := ""
 var look_cache := ""
 var last_pose := ""
+var tool_visuals: Dictionary = {}
 
 func _ready() -> void:
 	pivot = Node3D.new()
@@ -82,6 +83,7 @@ func _construct() -> void:
 	arm_r = _arm(1.0)
 	leg_l = _leg(-1.0)
 	leg_r = _leg(1.0)
+	_build_tools()
 
 func _arm(side: float) -> Node3D:
 	var node := Node3D.new()
@@ -138,11 +140,11 @@ func set_appearance(look: Dictionary) -> void:
 		if part is MeshInstance3D:
 			part.material_override = Shapes.material(hair_tint)
 
-func animate(t: float, swimming: bool, moving: bool, facing_right: bool = true) -> void:
+func animate(t: float, swimming: bool, moving: bool, facing_right: bool = true, heading: float = 0.0) -> void:
 	var beat := t * (5.3 if moving else 1.6)
 	var sway := sin(beat)
 	if swimming:
-		pivot.rotation.z = -PI*0.5 if facing_right else PI*0.5
+		pivot.rotation.z = -PI*0.5 - heading
 		pivot.rotation.x = 0.10*sin(t*1.2)
 		pivot.position.y = 0.04*sin(t*2.0)
 		arm_l.rotation.z = PI-0.07+0.035*sin(beat)
@@ -169,3 +171,45 @@ func animate(t: float, swimming: bool, moving: bool, facing_right: bool = true) 
 	skull.rotation.x = sin(t*0.81)*0.018
 	for i in range(rear_hair.get_child_count()):
 		rear_hair.get_child(i).rotation.x = sin(t*1.9+float(i)*0.6)*0.085
+
+func _build_tools() -> void:
+	var pick := Node3D.new()
+	pick.name = "Articulated mineral cutter"
+	pick.position = Vector3(0.37,1.03,0.31)
+	pivot.add_child(pick)
+	Shapes.tube(pick,"Composite handle",Vector3(0,-0.18,0),Vector3(0,0.31,0),0.045,Color("#926e55"),0.23)
+	Shapes.cone(pick,"Steel pickaxe tip",Vector3(0.03,0.28,0),0.32,0.12,Color("#9fc7cb"))
+	tool_visuals["abyssPickaxe"] = pick
+	var sample := Node3D.new()
+	sample.name = "Reusable science cylinder"
+	sample.position = Vector3(0.42,0.95,0.31)
+	pivot.add_child(sample)
+	Shapes.ellipsoid(sample,"Glass cylinder",Vector3.ZERO,Vector3(0.10,0.24,0.10),Color("#2e617c"),0.65)
+	Shapes.ellipsoid(sample,"Liquid sample",Vector3(0,-0.075,0.0),Vector3(0.08,0.13,0.08),Color("#63d2bd"),0.0,0.4)
+	Shapes.tube(sample,"Golden closure",Vector3(0,0.25,0),Vector3(0,0.30,0),0.11,Color("#d3aa6e"),0.48)
+	tool_visuals["emptyCylinder"] = sample
+	var jet := Node3D.new()
+	jet.name = "Water propulsion machine"
+	jet.position = Vector3(-0.05,1.12,-0.44)
+	pivot.add_child(jet)
+	Shapes.ellipsoid(jet,"Titanium shell",Vector3.ZERO,Vector3(0.22,0.41,0.21),Color("#2f5a68"),0.59)
+	Shapes.box(jet,"Protected fins",Vector3(0,0.12,0.15),Vector3(0.32,0.14,0.11),Color("#193b50"),0.25)
+	Shapes.ellipsoid(jet,"Battery indicator",Vector3(0,0.29,0.22),Vector3(0.07,0.035,0.04),Color("#68f0e7"),0.1,1.7)
+	for side in [-1.0,1.0]:
+		Shapes.tube(jet,"Turbine exhaust",Vector3(side*0.13,-0.28,0),Vector3(side*0.13,-0.47,0),0.11,Color("#1b3047"),0.68)
+		Shapes.ellipsoid(jet,"Impeller core",Vector3(side*0.13,-0.47,0),Vector3(0.055,0.024,0.055),Color("#6fe3e5"),0.25,0.7)
+	tool_visuals["propulsionUnit"] = jet
+	_set_tool_visibility("abyssPickaxe")
+
+func _set_tool_visibility(id: String) -> void:
+	for key in tool_visuals.keys():
+		var node: Node3D = tool_visuals[key]
+		node.visible = str(key)==id
+
+func set_tool_state(id: String, propelling: bool, extracting: bool, t: float) -> void:
+	_set_tool_visibility(id)
+	if tool_visuals.has("abyssPickaxe"):
+		(tool_visuals["abyssPickaxe"] as Node3D).rotation.z = sin(t*11.0)*0.27 if extracting and id=="abyssPickaxe" else 0.0
+	if tool_visuals.has("propulsionUnit"):
+		var node: Node3D = tool_visuals["propulsionUnit"]
+		node.scale = Vector3.ONE*(1.0+sin(t*24.0)*0.035 if propelling else 1.0)

@@ -23,6 +23,7 @@ var points: Array[Node3D] = []
 var dust: Array[Node3D] = []
 var build_counter := 0
 var water_glass: MeshInstance3D
+var boost_bubbles: Array[MeshInstance3D] = []
 
 func _ready() -> void:
 	viewport = SubViewport.new()
@@ -72,9 +73,14 @@ func _ready() -> void:
 		last_species.append("")
 	_build_particles()
 	_build_water_glass()
+	_build_bubble_pool()
 
 func texture() -> Texture2D:
 	return viewport.get_texture()
+
+func set_enabled(active: bool) -> void:
+	if viewport != null:
+		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
 
 func _from_game(point: Vector2, camera_center: Vector2, z: float = 0.0) -> Vector3:
 	return Vector3((point.x-camera_center.x)*UNITS_PER_PIXEL,
@@ -98,7 +104,9 @@ func synchronize(game_world: Node2D, delta: float) -> void:
 	environment_node.environment.fog_density = lerpf(0.034,0.012,attenuation)
 	swimmer.position = _from_game(diver_pos,center,0.9)
 	swimmer.call("set_appearance",world.diver.appearance)
-	swimmer.call("animate",t,true,world.diver.velocity.length()>8.0,world.diver.is_facing_right)
+	swimmer.call("animate",t,true,world.diver.velocity.length()>8.0,world.diver.is_facing_right,world.diver.visual_heading)
+	swimmer.call("set_tool_state",world.diver.equipped_tool,world.diver.is_propelling,world.diver.is_extracting,t)
+	_update_propulsion_bubbles(diver_pos,center)
 	spot.position = swimmer.position + Vector3(0,0,2.2)
 	spot.rotation_degrees = Vector3(0,0,0)
 	var sector := Vector2i(int(floor(center.x/420.0)),int(floor(center.y/420.0)))
@@ -273,3 +281,27 @@ func _build_water_glass() -> void:
 	(water_glass.material_override as ShaderMaterial).shader = preload("res://shaders/underwater_volume.gdshader")
 	water_glass.position.z = 5.0
 	root3d.add_child(water_glass)
+
+func _build_bubble_pool() -> void:
+	for i in range(34):
+		var b := Shapes.ellipsoid(root3d,"Hydrojet bubble %02d" % i,Vector3.ZERO,
+			Vector3.ONE*0.07,Color(0.55,0.92,0.98,0.42),0.09,0.1)
+		b.visible = false
+		boost_bubbles.append(b)
+
+func _update_propulsion_bubbles(diver_position: Vector2, center: Vector2) -> void:
+	var active: bool = world.diver.is_propelling
+	var backward := Vector2.LEFT.rotated(world.diver.visual_heading)
+	for i in range(boost_bubbles.size()):
+		var b := boost_bubbles[i]
+		b.visible = active
+		if not active:
+			continue
+		var seed := float(i)/float(boost_bubbles.size())
+		var age := fposmod(t*2.15+seed,1.0)
+		var spread := Vector2(0.0,sin(float(i)*3.43+t*10.0)*(3.0+age*29.0))
+		var p2 := diver_position + backward*(48.0+age*255.0)+spread
+		p2.y -= age*age*39.0
+		b.position = _from_game(p2,center,0.8+age*0.4)
+		var radius := 0.032+age*0.052
+		b.scale = Vector3.ONE*(radius/0.07)

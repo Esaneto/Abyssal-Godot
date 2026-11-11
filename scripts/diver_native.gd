@@ -305,12 +305,14 @@ func _draw_equipped_tool(breathe: float) -> void:
 			]),Color(0.38,0.88,0.93,0.19))
 	elif equipped_tool == "abyssPickaxe":
 		var swing := sin(time_s*10.0)*0.28 if is_extracting else 0.0
-		draw_set_transform(Vector2(45,7),visual_heading+swing,Vector2.ONE)
-		draw_line(Vector2.ZERO,Vector2(19,20),Color("#b57e56"),6.0,true)
-		draw_colored_polygon(PackedVector2Array([
-			Vector2(15,13),Vector2(19,-9),Vector2(34,-18),Vector2(32,-9),Vector2(22,17)
-		]),Color("#b7d6d7"))
-		draw_line(Vector2(18,-7),Vector2(32,-13),Color("#6ce5e9"),2.0,true)
+		var pivot := Vector2(43.0,7.0)
+		var handle_b := pivot+Vector2(19,20).rotated(swing)
+		draw_line(pivot,handle_b,Color("#b57e56"),6.0,true)
+		var blade := PackedVector2Array()
+		for v in [Vector2(15,13),Vector2(19,-9),Vector2(34,-18),Vector2(32,-9),Vector2(22,17)]:
+			blade.append(pivot+v.rotated(swing))
+		draw_colored_polygon(blade,Color("#b7d6d7"))
+		draw_line(pivot+Vector2(18,-7).rotated(swing),pivot+Vector2(32,-13).rotated(swing),Color("#6ce5e9"),2.0,true)
 	elif equipped_tool == "emptyCylinder":
 		draw_rect(Rect2(42,-7,14,29),Color("#789baa"))
 		draw_rect(Rect2(44,-4,10,23),Color("#0c3950"))

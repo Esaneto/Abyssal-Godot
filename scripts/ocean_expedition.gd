@@ -9,6 +9,7 @@ const Art = preload("res://scripts/cinematic_art.gd")
 const ReefArt = preload("res://scripts/native_reef_art.gd")
 const NativeHUD = preload("res://scripts/native_ocean_hud.gd")
 const Ocean3D = preload("res://scripts/visuals3d/ocean_renderer.gd")
+const AnimeFinish = preload("res://scripts/anime_ocean_finish.gd")
 
 const MAP_W := 24000.0
 const MAP_H := 21000.0
@@ -76,6 +77,7 @@ func _ready() -> void:
 	cinematic_3d = Ocean3D.new()
 	cinematic_3d.name = "Native3DOcean"
 	add_child(cinematic_3d)
+	cinematic_3d.call("set_enabled",false)
 	diver = DiverScript.new()
 	diver.name = "Mergulhador"
 	diver.position = SPAWN
@@ -162,6 +164,7 @@ func begin_expedition() -> void:
 		diver.set_appearance(progress.appearance_snapshot())
 	diver.recover()
 	diver.visible = not visual_3d_enabled
+	cinematic_3d.call("set_enabled",visual_3d_enabled)
 	field_guide_open = false
 	inventory_open = false
 	chart_open = false
@@ -172,6 +175,7 @@ func end_expedition() -> void:
 	if progress != null:
 		progress.set_checkpoint(diver.global_position, sky_time)
 	active = false
+	cinematic_3d.call("set_enabled",false)
 	camera.enabled = false
 	visible = false
 	process_mode = Node.PROCESS_MODE_DISABLED
@@ -203,6 +207,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_V:
 			visual_3d_enabled = not visual_3d_enabled
 			diver.visible = not visual_3d_enabled
+			cinematic_3d.call("set_enabled",visual_3d_enabled)
 			queue_redraw()
 		elif event.keycode == KEY_TAB:
 			field_guide_open = not field_guide_open
@@ -399,6 +404,7 @@ func _draw() -> void:
 		return
 	var area := _visible_bounds()
 	_draw_water(area)
+	AnimeFinish.background(self,area,time_s,_sunlight(),depth_at_y(diver.position.y))
 	ReefArt.atmosphere(self,area,time_s,_sunlight(),depth_at_y(diver.position.y))
 	Art.ocean_distance(self, self, area, time_s, _sunlight())
 	_draw_light_beams(area)
@@ -412,6 +418,7 @@ func _draw() -> void:
 	_draw_resources()
 	_draw_fauna(area)
 	ReefArt.foreground(self,area,time_s,depth_at_y(diver.position.y))
+	AnimeFinish.foreground(self,area,time_s,depth_at_y(diver.position.y))
 	_draw_deep_visibility(area)
 	ReefArt.flashlight(self,diver.position,diver.is_facing_right,time_s,depth_at_y(diver.position.y))
 	_draw_hud()
@@ -425,12 +432,12 @@ func _draw_water(area: Rect2) -> void:
 		var y := area.position.y + float(i) * band_h
 		var d := depth_at_y(y)
 		var fade := exp(-d / 260.0)
-		var tint := Color("#041326").lerp(Color("#1085ae"), clampf(fade * solar * 1.12, 0.0, 0.96))
+		var tint := Color("#020d1b").lerp(Color("#0b667b"), clampf(fade * solar * 0.94, 0.0, 0.93))
 		draw_rect(Rect2(area.position.x, y, area.size.x, band_h + 1.5), tint)
 	# Surface and sky are not a wall: the diver can ascend to breathe.
 	if area.position.y < SURFACE_Y:
 		draw_rect(Rect2(area.position.x, area.position.y, area.size.x,
-			maxf(0.0, SURFACE_Y - area.position.y)), Color("#07283a").lerp(Color("#4e9aaa"), solar * 0.55))
+			maxf(0.0, SURFACE_Y - area.position.y)), Color("#082039").lerp(Color("#398591"), solar * 0.51))
 		for ix in range(0, 40):
 			var x := floorf(area.position.x / 65.0) * 65.0 + float(ix) * 65.0
 			var ripple := 3.0 * sin(x * 0.022 + time_s * 1.7)
