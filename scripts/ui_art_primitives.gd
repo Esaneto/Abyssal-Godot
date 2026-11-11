@@ -1,10 +1,10 @@
 extends RefCounted
 ## Art primitives shared by the cabin and the sea. No fullscreen screenshots.
 ## Geometry is drawn per frame; item counts and action state come from game data.
-const CYAN := Color("#46e8f2")
-const BLUE := Color("#067eaf")
-const GOLD := Color("#ffba57")
-const WHITE := Color("#e8fbff")
+const CYAN := Color("#648f98")
+const BLUE := Color("#355773")
+const GOLD := Color("#c49c66")
+const WHITE := Color("#d6e0dd")
 const INK := Color("#030e20")
 
 static func poly(c: CanvasItem, coords: Array, color: Color) -> void:
@@ -36,12 +36,12 @@ static func chamfer(rect: Rect2, amount: float = 10.0) -> PackedVector2Array:
 static func panel(c: CanvasItem, area: Rect2, selected: bool = false, warm: bool = false) -> void:
 	var trim := GOLD if warm else CYAN
 	poly(c, Array(chamfer(area.grow(4))), Color(trim.r, trim.g, trim.b, 0.07 if not selected else 0.23))
-	poly(c, Array(chamfer(area)), Color("#061728") if not selected else Color("#123547"))
-	poly(c, Array(chamfer(area.grow(-2.0))), Color("#081d31") if not selected else Color("#114059"))
+	poly(c, Array(chamfer(area)), Color("#101a29") if not selected else Color("#302b2d"))
+	poly(c, Array(chamfer(area.grow(-2.0))), Color("#0e2330") if not selected else Color("#293c48"))
 	var ring := chamfer(area)
-	c.draw_polyline(ring, Color(trim.r, trim.g, trim.b, 0.48 if not selected else 0.93), 1.6, true)
+	c.draw_polyline(ring, Color(trim.r, trim.g, trim.b, 0.35 if not selected else 0.80), 1.6, true)
 	c.draw_line(area.position + Vector2(15, 3), area.position + Vector2(area.size.x - 20, 3),
-		Color(trim.r, trim.g, trim.b, 0.35 if not selected else 0.88), 1.2, true)
+		Color(trim.r, trim.g, trim.b, 0.25 if not selected else 0.75), 1.2, true)
 	if selected:
 		c.draw_line(area.position + Vector2(13, area.size.y - 5),
 			area.position + Vector2(area.size.x - 13, area.size.y - 5), trim, 2.3, true)

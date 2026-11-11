@@ -12,9 +12,10 @@ const PANEL := Color(0.012,0.027,0.046,0.83)
 
 static func _frame(c: CanvasItem, rect: Rect2, chosen: bool = false) -> void:
 	c.draw_rect(rect,Color(0.006,0.013,0.026,0.77))
+	c.draw_rect(rect,Color(0.34,0.46,0.49,0.62),false,1.0,true)
 	c.draw_rect(Rect2(rect.position+Vector2(2,2),rect.size-Vector2(4,4)),PANEL)
 	c.draw_line(rect.position+Vector2(8,2),rect.position+Vector2(rect.size.x-8,2),
-		BRASS if chosen else Color(0.34,0.49,0.52,0.45),1.6,true)
+		BRASS if chosen else Color(0.47,0.60,0.59,0.53),1.6,true)
 	c.draw_line(rect.position+Vector2(1,12),rect.position+Vector2(1,rect.size.y-9),
 		Color(0.19,0.31,0.37,0.54),1.0,true)
 	for sign in [0.0,1.0]:
