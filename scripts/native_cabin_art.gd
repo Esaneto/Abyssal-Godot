@@ -237,7 +237,7 @@ static func _paint_monitor(c: CanvasItem, t: float, selected: int, progress: Ref
 	UI.panel(c,Rect2(350,189,801,344),true)
 	UI.panel(c,Rect2(362,201,777,321))
 	c.draw_rect(Rect2(362,202,777,9),Color("#395276"))
-	UI.glow_line(c,Vector2(521,207),Vector2(979,207),Color("#ffb35b"),3.0)
+	UI.glow_line(c,Vector2(521,207),Vector2(979,207),Color("#ba956e"),2.0)
 	for i in range(MENU.size()):
 		var active := i==selected
 		var r := vertical_nav(i)
@@ -249,7 +249,7 @@ static func _paint_monitor(c: CanvasItem, t: float, selected: int, progress: Ref
 	UI.item(c,KEYS[selected],Vector2(605,270),0.93)
 	UI.caption(c,MENU[selected],Vector2(643,258),26,Color("#f0faff"))
 	UI.caption(c,DESCRIPTIONS[selected],Vector2(645,284),13,Color("#8ad1dd"))
-	c.draw_line(Vector2(580,296),Vector2(1108,296),Color(0.17,0.68,0.82,0.6),2,true)
+	c.draw_line(Vector2(580,296),Vector2(1108,296),Color(0.37,0.60,0.68,0.40),1.5,true)
 	match selected:
 		5:
 			var items := ["polymetallicNodule","ferromanganeseCrust","phosphorite","hydrothermalSulfide","oilCylinder","gasCylinder"]

@@ -24,7 +24,7 @@ func _ready() -> void:
 	add_child(viewport)
 	stage = Node3D.new()
 	viewport.add_child(stage)
-	env_node = Shapes.environment(Color("#075b77"),Color("#075674"),0.012)
+	env_node = Shapes.environment(Color("#071a2b"),Color("#0b2f40"),0.024)
 	stage.add_child(env_node)
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -35,17 +35,18 @@ func _ready() -> void:
 	stage.add_child(camera)
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-39,-30,0)
-	sun.light_color = Color("#a3eaf1")
-	sun.light_energy = 1.15
+	sun.light_color = Color("#8aa7b8")
+	sun.light_energy = 0.62
 	stage.add_child(sun)
-	_light(Vector3(-4.4,2.7,2.8),Color("#e3a965"),2.5,7.0)
-	_light(Vector3(2.9,2.7,3.3),Color("#65e6f1"),2.3,8.0)
-	_light(Vector3(-0.2,0.15,-7),Color("#16bacb"),2.6,14.0)
+	_light(Vector3(-4.4,2.7,2.8),Color("#dea269"),1.5,7.0)
+	_light(Vector3(2.9,2.7,3.3),Color("#5c9eb2"),1.0,8.0)
+	_light(Vector3(-0.2,0.15,-7),Color("#3b8997"),1.2,14.0)
 	_build_outside()
 	_build_glass()
 	_build_hull()
 	_build_instruments()
-	_build_pilot()
+	# 3D pilot replaced by the more expressive animated layered anime character.
+	# Keep the old 3D rig function for comparison without constructing it every frame.
 
 func _light(pos: Vector3, tint: Color, energy: float, radius: float) -> void:
 	var light := OmniLight3D.new()
@@ -133,7 +134,7 @@ func _build_hull() -> void:
 	for i in range(10):
 		var x := -6.1+float(i)*1.36
 		Shapes.box(stage,"Ceiling fixture",Vector3(x,2.86,0.45),Vector3(0.80,0.11,0.38),steel,0.45)
-		Shapes.box(stage,"Amber strip light",Vector3(x,2.79,0.68),Vector3(0.66,0.055,0.045),Color("#ffbc73"),0.12,2.0)
+		Shapes.box(stage,"Amber strip light",Vector3(x,2.79,0.68),Vector3(0.66,0.055,0.045),Color("#e6a768"),0.07,0.55)
 	Shapes.tube(stage,"Overhead pressure conduit",Vector3(-6.7,2.65,0.36),Vector3(6.7,2.65,0.36),0.055,Color("#76808b"),0.65)
 	for i in range(8):
 		var x := -6.4+float(i)*1.82
@@ -141,7 +142,7 @@ func _build_hull() -> void:
 	# Fluid light shafts reflected onto the metallic deck.
 	for i in range(7):
 		Shapes.box(stage,"Deck recessed lights",Vector3(-5.7+float(i)*1.9,-2.12,3.5),
-			Vector3(0.72,0.03,0.07),Color("#42a9bd"),0.2,1.5)
+			Vector3(0.72,0.03,0.07),Color("#64858a"),0.2,0.65)
 
 func _build_instruments() -> void:
 	# Actual 3D consoles sit behind the existing interactive Godot menu.
@@ -199,8 +200,8 @@ func update_live(time_value: float, appearance: Dictionary) -> void:
 		pilot.call("set_appearance",appearance)
 	pilot.call("animate",clock,false,false,true)
 	var solar := 0.55+0.45*cos(clock*TAU/420.0)
-	sun.light_energy = 0.24+1.6*solar
-	var color := Color("#041b35").lerp(Color("#15566b"),solar)
+	sun.light_energy = 0.18+0.75*solar
+	var color := Color("#020c1a").lerp(Color("#0c4156"),solar)
 	env_node.environment.background_color = color
 	env_node.environment.fog_light_color = color
 	for i in range(fauna.size()):
