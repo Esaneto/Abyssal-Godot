@@ -29,7 +29,7 @@ static func paint(canvas: Node2D, t: float, selected: int, progress: RefCounted,
 	_paint_ocean(canvas, t)
 	_paint_bridge(canvas, t)
 	_paint_console(canvas, t)
-	_paint_pilot(canvas, t, progress.appearance_snapshot())
+	# Pilot is a live SubViewport 3D scene, not a cropped static sprite.
 	# Screen shifts to starboard so the pilot remains visible, not hidden.
 	canvas.draw_set_transform(Vector2(55.0,0.0),0.0,Vector2(0.95,1.0))
 	_paint_monitor(canvas, t, selected, progress)
