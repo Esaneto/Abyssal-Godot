@@ -229,7 +229,7 @@ func _run_tests() -> void:
 		_fail("Ponte de comando perdeu navegacao visual", 43)
 		return
 	for idx in range(6):
-		if CabinUI.click_menu(CabinUI.vertical_nav(idx).get_center()) != idx:
+		if CabinUI.click_menu(Vector2(55.0,0.0)+CabinUI.bottom_nav(idx).get_center()*Vector2(0.95,1.0)) != idx:
 			_fail("Area clicavel do menu desalinhada da arte", 44)
 			return
 	if world.last_observed_id != "manta":
