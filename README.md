@@ -1,3 +1,5 @@
+# Abyssal Godot (projeto independente)
+
 # Abyssal | Exploracao Oceanica em Godot 4
 
 Cliente nativo de testes, em desenvolvimento junto da versao JavaScript. O jogo HTML/JS e o servidor Node.js + PostgreSQL continuam intactos.
@@ -93,3 +95,6 @@ estao no repositorio GitHub**. O pacote separado continua sendo necessario.
 A textura de cada personagem ainda contem corpo e roupas ja compostos: a
 personalizacao livre de partes exigira recortes independentes, nao filtros
 de cor sobre o sprite inteiro.
+
+
+> Este repositório contém somente o projeto Godot. O Abyssal web permanece em `Esaneto/Abyssal`.
