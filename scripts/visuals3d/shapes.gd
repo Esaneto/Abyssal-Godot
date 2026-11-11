@@ -82,7 +82,7 @@ static func fin(parent: Node3D, label: String, a: Vector3, b: Vector3, c: Vector
 	var obj := MeshInstance3D.new()
 	obj.name = label
 	obj.mesh = surf.commit()
-	obj.material_override = material(tint, 0.0, 0.0, false)
+	obj.material_override = material(tint, 0.0, 0.0, tint.a < 0.99)
 	parent.add_child(obj)
 	return obj
 
@@ -101,3 +101,41 @@ static func environment(ambient: Color, fog_color: Color, fog_density: float) ->
 	e.fog_density = fog_density
 	node.environment = e
 	return node
+
+
+static func rock(parent: Node3D, label: String, pos: Vector3, radii: Vector3, tint: Color, seed_value: float = 0.0) -> MeshInstance3D:
+	# Uneven triangulated geology: never a spherical placeholder rock.
+	var surf := SurfaceTool.new()
+	surf.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rings := 10
+	var slices := 15
+	for j in range(rings):
+		var phi0 := -PI*0.5 + PI*float(j)/float(rings)
+		var phi1 := -PI*0.5 + PI*float(j+1)/float(rings)
+		for i in range(slices):
+			var a0 := TAU*float(i)/float(slices)
+			var a1 := TAU*float(i+1)/float(slices)
+			var v0 := _rock_point(a0,phi0,radii,seed_value)
+			var v1 := _rock_point(a1,phi0,radii,seed_value)
+			var v2 := _rock_point(a0,phi1,radii,seed_value)
+			var v3 := _rock_point(a1,phi1,radii,seed_value)
+			surf.add_vertex(v0)
+			surf.add_vertex(v1)
+			surf.add_vertex(v2)
+			surf.add_vertex(v2)
+			surf.add_vertex(v1)
+			surf.add_vertex(v3)
+	surf.generate_normals()
+	var obj := MeshInstance3D.new()
+	obj.name = label
+	obj.mesh = surf.commit()
+	obj.material_override = material(tint,0.05)
+	obj.position = pos
+	parent.add_child(obj)
+	return obj
+
+static func _rock_point(theta: float, elevation: float, radii: Vector3, seed_value: float) -> Vector3:
+	var w := 0.85+0.11*sin(theta*5.0+seed_value)+0.12*cos(theta*9.0+elevation*7.0+seed_value*0.71)
+	w += 0.095*sin(elevation*11.0+theta*3.0+seed_value*2.0)
+	return Vector3(cos(elevation)*cos(theta)*radii.x*w,
+		sin(elevation)*radii.y*w,cos(elevation)*sin(theta)*radii.z*w)

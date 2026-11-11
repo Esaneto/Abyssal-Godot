@@ -35,7 +35,7 @@ func _construct() -> void:
 	Shapes.ellipsoid(pivot,"Life monitor",Vector3(-0.135,1.30,0.29),Vector3(0.055,0.036,0.017),Color("#54e5df"),0.2,2.0)
 	for side in [-1.0,1.0]:
 		Shapes.tube(pivot,"Harness strap",Vector3(side*0.23,1.56,0.21),Vector3(side*0.18,0.90,0.24),0.035,Color("#0e2030"),0.20)
-		Shapes.ellipsoid(pivot,"Shoulder shell",Vector3(side*0.38,1.47,0),Vector3(0.20,0.18,0.22),Color("#203f5a"),0.35)
+		Shapes.ellipsoid(pivot,"Shoulder shell",Vector3(side*0.38,1.47,0),Vector3(0.155,0.15,0.20),Color("#203f5a"),0.20)
 		Shapes.ellipsoid(pivot,"Neon shoulder",Vector3(side*0.39,1.51,0.18),Vector3(0.055,0.025,0.03),Color("#61c8cf"),0.05,1.7)
 	Shapes.tube(pivot,"Neck seal",Vector3(0,1.52,0),Vector3(0,1.73,0),0.17,Color("#192837"),0.12)
 	skull = Node3D.new()
@@ -69,7 +69,7 @@ func _construct() -> void:
 			rear_hair.add_child(strand)
 			Shapes.ellipsoid(strand,"Hair lock",Vector3.ZERO,Vector3(0.045,0.23,0.068),Color("#25222b"))
 	# Regulator, glass visor, straps and tank are physical separate meshes.
-	mask_glass = Shapes.ellipsoid(skull,"Goggle visor",Vector3(0,0.11,0.245),Vector3(0.194,0.12,0.044),Color(0.30,0.77,0.84,0.65),0.65)
+	mask_glass = Shapes.ellipsoid(skull,"Goggle visor",Vector3(0,0.11,0.245),Vector3(0.179,0.098,0.03),Color(0.48,0.86,0.91,0.25),0.20)
 	Shapes.ellipsoid(skull,"Regulator",Vector3(0,-0.09,0.255),Vector3(0.105,0.075,0.072),Color("#122438"),0.45)
 	for side in [-1.0,1.0]:
 		Shapes.tube(skull,"Mask frame",Vector3(side*0.178,0.18,0.25),Vector3(side*0.18,0.01,0.24),0.019,Color("#243b4c"),0.4)
@@ -88,9 +88,9 @@ func _arm(side: float) -> Node3D:
 	node.name = "LeftArm" if side < 0 else "RightArm"
 	node.position = Vector3(side*0.41,1.46,0.0)
 	pivot.add_child(node)
-	suit_meshes.append(Shapes.ellipsoid(node,"Upper arm",Vector3(side*0.055,-0.23,0.02),Vector3(0.145,0.29,0.15),Color("#25435d"),0.25))
+	suit_meshes.append(Shapes.ellipsoid(node,"Upper arm",Vector3(side*0.055,-0.23,0.02),Vector3(0.145,0.29,0.15),Color("#25435d"),0.10))
 	Shapes.ellipsoid(node,"Elbow joint",Vector3(side*0.07,-0.45,0.09),Vector3(0.125,0.12,0.14),Color("#13273b"),0.25)
-	suit_meshes.append(Shapes.ellipsoid(node,"Forearm",Vector3(side*0.085,-0.57,0.22),Vector3(0.115,0.22,0.12),Color("#25435d"),0.27))
+	suit_meshes.append(Shapes.ellipsoid(node,"Forearm",Vector3(side*0.085,-0.57,0.22),Vector3(0.115,0.22,0.12),Color("#25435d"),0.10))
 	Shapes.ellipsoid(node,"Glove",Vector3(side*0.10,-0.74,0.29),Vector3(0.12,0.12,0.095),Color("#111e33"),0.38)
 	return node
 
@@ -114,12 +114,12 @@ func set_appearance(look: Dictionary) -> void:
 	look_cache = serialized
 	body_id = str(look.get("body","female"))
 	pivot.scale.x = 0.95 if body_id == "female" else 1.07
-	var tint := Color("#24465e")
+	var tint := Color("#193348")
 	match str(look.get("suit","abyss")):
 		"tide": tint = Color("#167b80")
 		"ember": tint = Color("#ac6a42")
 	for mesh in suit_meshes:
-		mesh.material_override = Shapes.material(tint,0.30)
+		mesh.material_override = Shapes.material(tint,0.08)
 	var hair_tint := Color("#49302b")
 	match str(look.get("hair_color","copper")):
 		"black": hair_tint=Color("#121c27")

@@ -13,6 +13,7 @@ var sun: DirectionalLight3D
 var env_node: WorldEnvironment
 var clock := 0.0
 var previous_look := ""
+var glass: MeshInstance3D
 
 func _ready() -> void:
 	viewport = SubViewport.new()
@@ -41,6 +42,7 @@ func _ready() -> void:
 	_light(Vector3(2.9,2.7,3.3),Color("#65e6f1"),2.3,8.0)
 	_light(Vector3(-0.2,0.15,-7),Color("#16bacb"),2.6,14.0)
 	_build_outside()
+	_build_glass()
 	_build_hull()
 	_build_instruments()
 	_build_pilot()
@@ -67,8 +69,8 @@ func _build_outside() -> void:
 		var x := -14.0+fx*1.5
 		var y := -2.75+0.50*sin(fx*0.76)
 		var z := -11.0-float(i%3)*1.7
-		var cliff := Shapes.ellipsoid(stage,"Submerged oceanic ridge",Vector3(x,y,z),
-			Vector3(1.2+float(i%4)*0.45,1.5+float(i%3)*0.75,1.3),Color("#143d51").lerp(Color("#285c67"),float(i%4)*0.11))
+		var cliff := Shapes.rock(stage,"Submerged oceanic ridge",Vector3(x,y,z),
+			Vector3(1.2+float(i%4)*0.45,1.5+float(i%3)*0.75,1.3),Color("#143d51").lerp(Color("#285c67"),float(i%4)*0.11),fx*0.41)
 		cliff.rotation.z = sin(fx*1.7)*0.4
 		if i%2==0:
 			_coral_group(Vector3(x,y+0.8,z+1.6),i)
@@ -77,7 +79,7 @@ func _build_outside() -> void:
 		stage.add_child(marine)
 		marine.configure(["manta","eagle_ray","turtle","jelly","oarfish","jelly","turtle","manta","viper"][i],float(i)*13.4)
 		marine.position = Vector3(-8.0+float(i)*2.05,1.3+sin(float(i)*2.2)*1.25,-8.3-float(i%3))
-		marine.scale = Vector3.ONE*(0.55+float(i%3)*0.22)
+		marine.scale = Vector3.ONE*(0.40+float(i%3)*0.15)
 		fauna.append(marine)
 	# Rays made of moving transparent geometry instead of a static background bitmap.
 	for i in range(13):
@@ -197,7 +199,7 @@ func update_live(time_value: float, appearance: Dictionary) -> void:
 	pilot.call("animate",clock,false,false,true)
 	var solar := 0.55+0.45*cos(clock*TAU/420.0)
 	sun.light_energy = 0.24+1.6*solar
-	var color := Color("#071c39").lerp(Color("#116d83"),solar)
+	var color := Color("#041b35").lerp(Color("#15566b"),solar)
 	env_node.environment.background_color = color
 	env_node.environment.fog_light_color = color
 	for i in range(fauna.size()):
@@ -209,3 +211,14 @@ func update_live(time_value: float, appearance: Dictionary) -> void:
 	for i in range(foliage.size()):
 		var stem := foliage[i]
 		stem.rotation.z = sin(clock*0.42+float(i))*0.07
+
+func _build_glass() -> void:
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(18.0,10.0)
+	glass = MeshInstance3D.new()
+	glass.name = "Moving underwater window refraction"
+	glass.mesh = mesh
+	glass.material_override = ShaderMaterial.new()
+	(glass.material_override as ShaderMaterial).shader = preload("res://shaders/underwater_volume.gdshader")
+	glass.position = Vector3(0,0,-4.2)
+	stage.add_child(glass)

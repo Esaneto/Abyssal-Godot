@@ -22,6 +22,7 @@ var world
 var points: Array[Node3D] = []
 var dust: Array[Node3D] = []
 var build_counter := 0
+var water_glass: MeshInstance3D
 
 func _ready() -> void:
 	viewport = SubViewport.new()
@@ -70,6 +71,7 @@ func _ready() -> void:
 		fauna_pool.append(null)
 		last_species.append("")
 	_build_particles()
+	_build_water_glass()
 
 func texture() -> Texture2D:
 	return viewport.get_texture()
@@ -90,7 +92,7 @@ func synchronize(game_world: Node2D, delta: float) -> void:
 	var attenuation := exp(-meters/245.0)
 	sunlight.light_energy = 0.18 + 2.0*solar*attenuation
 	spot.light_energy = 0.35 + 2.3*(1.0-attenuation)
-	var water_color := Color("#061b35").lerp(Color("#147b91"),attenuation*solar*0.8)
+	var water_color := Color("#041227").lerp(Color("#145167"),attenuation*solar*0.83)
 	environment_node.environment.background_color = water_color
 	environment_node.environment.fog_light_color = water_color
 	environment_node.environment.fog_density = lerpf(0.034,0.012,attenuation)
@@ -139,9 +141,9 @@ func _rebuild_terrain(center: Vector2, meters: float) -> void:
 			points.append(parent)
 			if dist < 400.0:
 				var radius := rng.randf_range(0.65,2.6)
-				var rock := Shapes.ellipsoid(parent,"Layered volcanic rock",Vector3.ZERO,
+				var rock := Shapes.rock(parent,"Layered volcanic rock",Vector3.ZERO,
 					Vector3(radius,radius*rng.randf_range(0.65,1.6),radius*0.60),
-					Color("#16384c").lerp(Color("#466370"),rng.randf_range(0.0,0.5)),0.09)
+					Color("#16384c").lerp(Color("#466370"),rng.randf_range(0.0,0.5)),float(seed_value)*0.002)
 				rock.rotation.z = rng.randf_range(-0.5,0.5)
 				for i in range(3):
 					var x := rng.randf_range(-radius,radius)
@@ -155,9 +157,9 @@ func _rebuild_terrain(center: Vector2, meters: float) -> void:
 					_vent_cluster(parent,rng)
 			elif rng.randf()<0.28:
 				# Suspended terrain silhouettes fill the open-ocean view at multiple Z planes.
-				var rock_back := Shapes.ellipsoid(parent,"Distant canyon outcrop",Vector3.ZERO,
+				var rock_back := Shapes.rock(parent,"Distant canyon outcrop",Vector3.ZERO,
 					Vector3(rng.randf_range(0.8,2.0),rng.randf_range(1.7,3.9),1.1),
-					Color("#0b3045"),0.0)
+					Color("#0b3045"),float(seed_value)*0.003)
 				rock_back.rotation.z = rng.randf_range(-0.5,0.5)
 	# Landmark rocks share their real 2D positions; players don't see imaginary walls.
 	for entry in world.ROCKS:
@@ -170,8 +172,8 @@ func _rebuild_terrain(center: Vector2, meters: float) -> void:
 		geometry.add_child(landmark)
 		points.append(landmark)
 		var rad := float(entry["radius"])*UNITS_PER_PIXEL
-		Shapes.ellipsoid(landmark,"Real collision landmark",Vector3.ZERO,
-			Vector3(rad,rad*0.94,rad*0.6),Color("#273e51"))
+		Shapes.rock(landmark,"Real collision landmark",Vector3.ZERO,
+			Vector3(rad,rad*0.94,rad*0.6),Color("#273e51"),pos2.x*0.003)
 		for i in range(5):
 			var phi := float(i)*TAU/5.0
 			var crystal_color := Color("#63e2e3") if shallow else Color("#5594bc")
@@ -260,3 +262,14 @@ func _animate_particles() -> void:
 			fposmod(ix*1.71+sin(t*0.22+ix)*0.19+12.0,24.0)-12.0,
 			fposmod(ix*0.63-t*(0.045+float(i%4)*0.018)+6.4,12.8)-6.4,
 			-4.0-float(i%8)*1.7)
+
+func _build_water_glass() -> void:
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(33.0,22.0)
+	water_glass = MeshInstance3D.new()
+	water_glass.name = "Animated volume refraction and caustics"
+	water_glass.mesh = mesh
+	water_glass.material_override = ShaderMaterial.new()
+	(water_glass.material_override as ShaderMaterial).shader = preload("res://shaders/underwater_volume.gdshader")
+	water_glass.position.z = 5.0
+	root3d.add_child(water_glass)
