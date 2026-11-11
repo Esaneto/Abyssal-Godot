@@ -146,50 +146,84 @@ static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: f
 	var silver := Color("#8fb8bc").lerp(Color("#223b48"), 1.0 - light)
 	var glow := Color("#57dce8")
 	match species_id:
+
 		"manta":
-			# Softly shaded wings and a clear diamond-like giant silhouette.
-			var wing := 9.0 * sin(time_s * 1.3 + pos.x * 0.01)
-			_line(canvas, Vector2(-36, 5), Vector2(-73, 15 + breathe * 3.0), Color("#355969"), 2.5)
-			var contour := PackedVector2Array([
-				Vector2(-48, 2), Vector2(-25, -9),
-				Vector2(-26, -38 - wing), Vector2(1, -22),
-				Vector2(31, -11), Vector2(49, -1),
-				Vector2(31, 11), Vector2(5, 20),
-				Vector2(-27, 36 + wing), Vector2(-23, 7)
-			])
-			var shades := PackedColorArray([
-				Color("#254755"), Color("#496778"), Color("#243c4b"),
-				Color("#5a7e8c"), Color("#728e9c"), Color("#8ba9b0"),
-				Color("#557787"), Color("#4a6874"), Color("#172f3c"),
-				Color("#2b4b59")
-			])
-			canvas.draw_polygon(contour, shades)
-			_oval(canvas, Vector2(13, -1), Vector2(23, 8), Color("#7097a0").lerp(Color("#345d6d"), 1.0 - light * 0.55))
-			_line(canvas, Vector2(-10, -17), Vector2(22, -8), Color(0.65, 0.88, 0.89, 0.45), 1.7)
-			_line(canvas, Vector2(-10, 17), Vector2(22, 8), Color(0.17, 0.35, 0.43, 0.73), 2.0)
-			canvas.draw_arc(Vector2(0,0),46.0,PI*1.04,PI*1.41,16,Color(0.45,0.90,0.97,0.37),1.5,true)
-			canvas.draw_arc(Vector2(0,0),46.0,-PI*0.42,-PI*0.04,16,Color(0.45,0.90,0.97,0.37),1.5,true)
-			canvas.draw_circle(Vector2(34, -3), 2.0, dark)
-			_line(canvas, Vector2(45, 3), Vector2(49, 8), Color("#9dc0ba"), 1.0)
+			# Fluid hydrofoil outline instead of the angular placeholder polygon.
+			var flap := 7.5*sin(time_s*1.22+pos.x*0.005)
+			var body := _smooth_outline(PackedVector2Array([
+				Vector2(-47,0),Vector2(-34,-8),Vector2(-30,-17),
+				Vector2(-16,-32-flap),Vector2(3,-40-flap*0.7),
+				Vector2(20,-24),Vector2(42,-9),Vector2(52,-3),
+				Vector2(54,3),Vector2(42,9),Vector2(19,23),
+				Vector2(3,39+flap*0.7),Vector2(-18,30+flap),
+				Vector2(-31,12),Vector2(-35,5)
+			]),6)
+			canvas.draw_colored_polygon(body,Color("#172c3a"))
+			var mantle := _smooth_outline(PackedVector2Array([
+				Vector2(-39,-1),Vector2(-18,-10),Vector2(1,-22-flap*0.35),
+				Vector2(24,-16),Vector2(44,-5),Vector2(45,5),
+				Vector2(24,14),Vector2(1,23+flap*0.35),
+				Vector2(-19,11)
+			]),5)
+			canvas.draw_colored_polygon(mantle,Color("#385563").lerp(Color("#607c87"),light*0.34))
+			var tipshade := _smooth_outline(PackedVector2Array([
+				Vector2(-26,-9),Vector2(-16,-31-flap),Vector2(2,-38-flap*0.7),
+				Vector2(12,-25),Vector2(6,-17),Vector2(-7,-13)
+			]),4)
+			canvas.draw_colored_polygon(tipshade,Color(0.19,0.36,0.44,0.56))
+			var lower_shade := _smooth_outline(PackedVector2Array([
+				Vector2(-25,10),Vector2(-17,30+flap),Vector2(3,38+flap*0.7),
+				Vector2(13,24),Vector2(6,17),Vector2(-7,13)
+			]),4)
+			canvas.draw_colored_polygon(lower_shade,Color(0.09,0.21,0.28,0.63))
+			canvas.draw_polyline(body,Color(0.54,0.70,0.74,0.65),1.4,true)
+			_oval(canvas,Vector2(29,0),Vector2(20,7),Color("#728f92").lerp(Color("#425e68"),1.0-light*0.50))
+			_line(canvas,Vector2(-35,0),Vector2(-78,sin(time_s*1.1)*7.0),Color("#496877"),1.8)
+			# Cartilage ribs track the fin; the animal visibly flexes as it swims.
+			for k in range(4):
+				var a := float(k)/4.0
+				_line(canvas,Vector2(-11.0+k*6.0,-4.0),Vector2(0.0+k*3.0,-(19.0+a*14.0)-flap*a*0.65),
+					Color(0.68,0.82,0.82,0.21),0.8)
+				_line(canvas,Vector2(-11.0+k*6.0,4.0),Vector2(0.0+k*3.0,(19.0+a*14.0)+flap*a*0.65),
+					Color(0.55,0.72,0.74,0.18),0.8)
+			canvas.draw_circle(Vector2(39,-3),2.4,Color("#0c2028"))
+			canvas.draw_circle(Vector2(39.6,-3.5),0.85,Color("#d0e3dc"))
+			for side in [-1.0,1.0]:
+				for k in range(4):
+					_line(canvas,Vector2(15.0-float(k)*4.0,side*(5.0+float(k)*0.4)),
+						Vector2(13.0-float(k)*4.0,side*(8.0+float(k)*0.65)),Color("#223c48"),1.05)
+			_line(canvas,Vector2(48,2),Vector2(53,4),Color("#95b0a7"),1.0)
 
 		"eagle_ray":
-			var pulse := sin(time_s * 1.25+pos.x*0.003)*7.0
-			# Deliberately broad wings, spotted mantle and a whip-like tail.
-			var shape := PackedVector2Array([
-				Vector2(-39,-4),Vector2(-16,-19-pulse),Vector2(7,-34-pulse),
-				Vector2(27,-13),Vector2(50,1),Vector2(27,15),
-				Vector2(7,33+pulse),Vector2(-13,18+pulse),Vector2(-38,5)
-			])
-			canvas.draw_colored_polygon(shape,Color("#24657e").lerp(Color("#5aa7b2"),light*0.35))
-			canvas.draw_polyline(shape,Color(0.55,0.95,0.99,0.76),1.6,true)
-			_line(canvas,Vector2(-38,0),Vector2(-92,sin(time_s*1.1)*9.0),Color("#6db6bf"),2.2)
-			for j in range(13):
-				var a := float(j)*2.43
-				var x := -17.0+cos(a)*23.0
-				var y := sin(a)*11.0
-				canvas.draw_circle(Vector2(x,y),1.4,Color(0.80,1.0,0.98,0.80))
-			_oval(canvas,Vector2(34,0),Vector2(19,7),Color("#68a9a9"))
-			canvas.draw_circle(Vector2(40,-2),2.3,Color("#0a2b3a"))
+			var flap := 8.5*sin(time_s*1.48+pos.x*0.004)
+			var outline := _smooth_outline(PackedVector2Array([
+				Vector2(-41,0),Vector2(-27,-9),Vector2(-17,-22-flap),
+				Vector2(4,-35-flap),Vector2(20,-26),Vector2(38,-10),
+				Vector2(51,-2),Vector2(54,3),Vector2(40,10),
+				Vector2(21,25),Vector2(3,34+flap),
+				Vector2(-17,22+flap),Vector2(-27,9)
+			]),6)
+			canvas.draw_colored_polygon(outline,Color("#172d3a"))
+			var upper := _smooth_outline(PackedVector2Array([
+				Vector2(-35,-1),Vector2(-15,-11),Vector2(3,-28-flap*0.7),
+				Vector2(25,-16),Vector2(45,0),Vector2(25,13),
+				Vector2(3,28+flap*0.7),Vector2(-15,12)
+			]),6)
+			canvas.draw_colored_polygon(upper,Color("#315867").lerp(Color("#547d82"),light*0.27))
+			canvas.draw_polyline(outline,Color(0.50,0.75,0.76,0.65),1.3,true)
+			_line(canvas,Vector2(-38,0),Vector2(-117,sin(time_s*0.97)*10.0),Color("#405e6c"),1.7)
+			for k in range(29):
+				var angle := float(k)*2.399963
+				var radius := sqrt(float(k)/29.0)
+				var x := -12.0+cos(angle)*radius*25.0
+				var y := sin(angle)*radius*(11.0+flap*0.18)
+				canvas.draw_circle(Vector2(x,y),0.90+float(k%3)*0.23,
+					Color(0.76,0.88,0.82,0.50+light*0.20))
+			_oval(canvas,Vector2(33,0),Vector2(15,5),Color("#6b9696"))
+			canvas.draw_circle(Vector2(40,-2),2.0,Color("#112a32"))
+			for k in range(5):
+				_line(canvas,Vector2(19-float(k)*4.0,3),Vector2(18-float(k)*4.0,7),
+					Color("#274554"),1.0)
 		"turtle":
 			# Anatomical swimming silhouette: separate flippers, scute polygons, head.
 			var flap := sin(time_s * 1.52 + pos.x * 0.004) * 9.0
@@ -325,3 +359,23 @@ static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: f
 			canvas.draw_circle(Vector2(43, -7), 2.1, dark)
 			_line(canvas, Vector2(47, -2), Vector2(57, -12), Color("#b6b9ad"), 1.5)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## Closed Catmull-Rom curves give biological bodies rounded fins without static textures.
+static func _smooth_outline(points: PackedVector2Array, subdivisions: int = 5) -> PackedVector2Array:
+	var n := points.size()
+	var result := PackedVector2Array()
+	if n < 3:
+		return points
+	for idx in range(n):
+		var p0: Vector2 = points[(idx-1+n)%n]
+		var p1: Vector2 = points[idx]
+		var p2: Vector2 = points[(idx+1)%n]
+		var p3: Vector2 = points[(idx+2)%n]
+		for sample in range(subdivisions):
+			var t := float(sample)/float(subdivisions)
+			var t2 := t*t
+			var t3 := t2*t
+			result.append(0.5*((p1*2.0)+(-p0+p2)*t+
+				(p0*2.0-p1*5.0+p2*4.0-p3)*t2+
+				(-p0+p1*3.0-p2*3.0+p3)*t3))
+	return result
