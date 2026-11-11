@@ -6,6 +6,7 @@ const CabinArt = preload("res://scripts/native_cabin_art.gd")
 const UIArt = preload("res://scripts/ui_art_primitives.gd")
 const Wardrobe = preload("res://scripts/wardrobe_ui.gd")
 const Cabin3D = preload("res://scripts/visuals3d/cabin_renderer.gd")
+const AnimeCabin = preload("res://scripts/anime_cabin_finish.gd")
 const Look = preload("res://scripts/diver_appearance.gd")
 var expedition: Node2D
 var progress: RefCounted
@@ -179,6 +180,7 @@ func _draw() -> void:
 		var cabin_tex: Texture2D = cabin_scene.call("texture")
 		if cabin_tex != null:
 			draw_texture_rect(cabin_tex,Rect2(0.0,0.0,1280.0,720.0),false)
+		AnimeCabin.paint(self,time_s)
 		CabinArt.paint_ui(self,time_s,menu_selected,progress,menu_feedback)
 	else:
 		CabinArt.paint(self,time_s,menu_selected,progress,menu_feedback)

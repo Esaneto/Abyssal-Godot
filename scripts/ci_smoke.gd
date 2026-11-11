@@ -47,6 +47,60 @@ func _smoke() -> void:
 		push_error("Fisica de mergulho nao respondeu ao controle")
 		quit(6)
 		return
+
+	# Six-axis cardinal and diagonal orientation is driven by swimming input.
+	if absf(wrapf(float(diver.visual_heading)-PI*0.5,-PI,PI)) > 0.28:
+		push_error("Diver did not turn downward while swimming down")
+		quit(11)
+		return
+	Input.action_press("move_up")
+	for frame in range(36):
+		await physics_frame
+	Input.action_release("move_up")
+	if absf(wrapf(float(diver.visual_heading)+PI*0.5,-PI,PI)) > 0.28:
+		push_error("Diver did not turn upward")
+		quit(12)
+		return
+	Input.action_press("move_right")
+	Input.action_press("move_up")
+	for frame in range(32):
+		await physics_frame
+	Input.action_release("move_up")
+	if absf(wrapf(float(diver.visual_heading)+PI*0.25,-PI,PI)) > 0.28:
+		push_error("Diver did not turn diagonally")
+		quit(13)
+		return
+	var profile = main.progress
+	if profile.get_count("propulsionUnit") != 1 or not profile.select_tool("propulsionUnit"):
+		push_error("Starting propulsion unit missing")
+		quit(14)
+		return
+	diver.set_equipped_tool("propulsionUnit")
+	var initial_charge: float = diver.propulsion_energy
+	Input.action_press("boost")
+	for frame in range(28):
+		await physics_frame
+	Input.action_release("boost")
+	Input.action_release("move_right")
+	if not diver.propulsion_energy < initial_charge-5.0:
+		push_error("Hydrojet did not consume energy")
+		quit(15)
+		return
+	if diver.swim_force.length() < 500.0:
+		push_error("Hydrojet did not apply physical thrust")
+		quit(16)
+		return
+	if diver.propulsion_bubbles == null:
+		push_error("Hydrojet bubble emitter missing")
+		quit(17)
+		return
+	var discharge: float = diver.propulsion_energy
+	for frame in range(45):
+		await physics_frame
+	if diver.propulsion_energy <= discharge:
+		push_error("Hydrojet did not recharge")
+		quit(18)
+		return
 	var ecology = load("res://scripts/marine_ecology.gd")
 	if ecology == null or ecology.SPECIES.size() < 8:
 		push_error("Catalogo da fauna ausente ou incompleto")

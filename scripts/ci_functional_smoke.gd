@@ -25,8 +25,25 @@ func _run_tests() -> void:
 		_fail("Shader de animacao anime-realista ausente", 60)
 		return
 	Anime.update_material(active_material,{"body":"female","hair":"long","hair_color":"copper","suit":"abyss"},3.0,true)
-	if saved.get_count("abyssPickaxe") != 1 or saved.get_count("emptyCylinder") != 1:
+	if saved.get_count("abyssPickaxe") != 1 or saved.get_count("emptyCylinder") != 1 or saved.get_count("propulsionUnit") != 1:
 		_fail("O kit inicial nao possui picareta e cilindro", 10)
+		return
+
+	# Tool 3 is a real reusable item. It must not extract ore or impersonate a pickaxe.
+	if not saved.select_tool("propulsionUnit"):
+		_fail("Hidrojato nao selecionavel",61)
+		return
+	if saved.select_tool("unknown-device"):
+		_fail("Equipamento inexistente foi aceito",62)
+		return
+	saved.select_tool("abyssPickaxe")
+	var research_fixture = Progress.new(false)
+	for i in range(2):
+		var point := Vector2(500.0,500.0)
+		research_fixture.collect({"id":"geo:boost:ore:%d" % i,"pos":point,"type":"seaMineral","amount":3},point,"abyssPickaxe")
+	research_fixture.collect({"id":"geo:boost:phos:0","pos":Vector2(500.0,500.0),"type":"phosphorite","amount":3},Vector2(500.0,500.0),"abyssPickaxe")
+	if not research_fixture.study("propulsionDrive").get("ok",false) or research_fixture.research_level("propulsionDrive") != 1:
+		_fail("Pesquisa de motor de propulsao nao funciona",63)
 		return
 	var Look = load("res://scripts/diver_appearance.gd")
 	if saved.appearance_snapshot()["body"]!="female":

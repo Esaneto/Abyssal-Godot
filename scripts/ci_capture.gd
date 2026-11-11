@@ -45,12 +45,27 @@ func _capture() -> void:
 	expedition.call("_unhandled_input",_key_event(KEY_V))
 	for i in range(6):
 		await process_frame
-	_save_screen("mar-aberto-modo-2d-comparacao.png")
+	_save_screen("mar-aberto-comparacao-3d.png")
 	expedition.call("_unhandled_input",_key_event(KEY_V))
 	for i in range(6):
 		await process_frame
-	_save_screen("mar-aberto-nativo-3d.png")
+	_save_screen("mar-aberto-ilustrado-anime-2d.png")
+	
 	_save_screen("mar-aberto-mergulhador.png")
+	main.progress.select_tool("propulsionUnit")
+	var pump_diver = main.get_node("ExpedicaoOceanica/Mergulhador")
+	pump_diver.set_equipped_tool("propulsionUnit")
+	Input.action_press("move_right")
+	Input.action_press("boost")
+	for i in range(18):
+		await physics_frame
+	for i in range(5):
+		await process_frame
+	_save_screen("mar-aberto-hidrojato-com-bolhas.png")
+	Input.action_release("boost")
+	Input.action_release("move_right")
+	main.progress.select_tool("abyssPickaxe")
+	pump_diver.set_equipped_tool("abyssPickaxe")
 	var visual_diver := main.get_node("ExpedicaoOceanica/Mergulhador")
 	var close_camera := visual_diver.get_node("CameraExploracao")
 	close_camera.zoom = Vector2(2.6,2.6)

@@ -9,6 +9,16 @@ Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza c
 2. Importe `project.godot` na raiz deste repositorio no Gerenciador de Projetos.
 3. Pressione **F5**.
 
+## Visuais anime 2.5D e equipamentos
+- Estilo principal: ilustracao 2.5D com contornos, paleta oceano escuro, particulas, causticas e vegetacao animada.
+- A cabine continua um cenario 3D vivo com acabamento industrial anime sobreposto, sem fundo de imagem estatica.
+- Fisica de natacao com aceleracao, arrasto, correnteza, flutuabilidade e rotacao do personagem por vetor 360 graus (para cima, baixo, diagonais e horizontal).
+- Inventario inicial: 1 Picareta, 2 Cilindro de amostra, 3 Hidrojato de propulsao.
+- Segure **Shift** com o hidrojato equipado para impulsionar o mergulhador. A bateria descarrega enquanto ativa e recarrega ao soltar.
+- Efeito de bolhas do propulsor animado tanto no modo 2D quanto no visual 3D alternativo.
+- Laboratorio: sete pesquisas, incluindo melhorias de bateria, impulso e recarga do Hidrojato.
+- **V**: alternar ilustracao anime 2D e renderizador 3D de comparacao no Mar Aberto. 3D fica suspenso quando nao esta em uso.
+
 ## Nova apresentacao 3D
 - Cabine inteira construida em `scripts/visuals3d/cabin_renderer.gd`, com janelas, relevo submarino, luzes, poltrona e mergulhador(a) 3D.
 - Mar Aberto renderizado por `scripts/visuals3d/ocean_renderer.gd`. Criaturas 3D animadas correspondem ao catalogo e aos encontros reais da simulacao 2D.
@@ -26,13 +36,14 @@ Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza c
 - **1-6** (com guarda-roupa aberto): selecionar uma das seis categorias; clique nas setas do painel para alterar
 - **Esc / X**: fechar o guarda-roupa e salvar a aparencia escolhida
 - **L**: abrir/fechar o laboratorio de pesquisas
-- **1-6** (com laboratorio aberto): selecionar a tecnologia
+- **1-7** (com laboratorio aberto): selecionar a tecnologia
 - **R**: pesquisar a tecnologia selecionada, se tiver os recursos
 - **Esc**: fechar o laboratorio
 
 ## Controles do Mar Aberto
 - **WASD/setas**: nadar, com arrasto, inercia, corrente e flutuabilidade
-- **1**: equipar picareta | **2**: equipar cilindro de amostra reutilizavel
+- **1**: equipar picareta | **2**: cilindro reutilizavel | **3**: hidrojato de propulsao
+- **Shift**: acionar hidrojato equipado, com energia e rastro de bolhas
 - **Segurar G**: minerar/coletar em depositos proximos (1,9s para minerios, 2,6s para amostras)
 - **I**: inventario de exploracao
 - **M**: carta de navegacao e setores explorados
@@ -40,7 +51,7 @@ Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza c
 - **Tab**: diario de campo, com todas as especies ja registradas recuperadas do save
 - **J / K** (diario aberto): consultar o registro anterior / seguinte e seus habitats
 - **Esc**: voltar ao submarino e salvar ponto atual
-- **V**: alternar entre visual 3D e visual 2D anterior
+- **V**: alternar entre o novo visual anime 2.5D e o comparativo 3D
 
 ## Paridade implementada nesta etapa
 - Fundo e rochas colidiveis em um Mar Aberto de 24.000 x 21.000 unidades
