@@ -226,7 +226,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_K and field_guide_open:
 			_cycle_field_guide(1)
 		elif event.keycode in [KEY_1, KEY_2, KEY_3] and progress != null:
-			var id := ["abyssPickaxe","emptyCylinder","propulsionUnit"][int(event.keycode - KEY_1)]
+			var id: String = ["abyssPickaxe", "emptyCylinder", "propulsionUnit"][int(event.keycode - KEY_1)]
 			if progress.select_tool(id):
 				diver.set_equipped_tool(id)
 				_set_status("EQUIPADO: " + str(ProgressScript.RESOURCE_NAMES[id]))
