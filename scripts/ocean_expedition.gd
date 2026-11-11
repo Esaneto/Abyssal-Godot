@@ -8,6 +8,7 @@ const ProgressScript = preload("res://scripts/exploration_progress.gd")
 const Art = preload("res://scripts/cinematic_art.gd")
 const ReefArt = preload("res://scripts/native_reef_art.gd")
 const NativeHUD = preload("res://scripts/native_ocean_hud.gd")
+const Ocean3D = preload("res://scripts/visuals3d/ocean_renderer.gd")
 
 const MAP_W := 24000.0
 const MAP_H := 21000.0
@@ -36,6 +37,8 @@ const PASSAGE_ARCHES := [
 	Vector2(21700.0, 6100.0)
 ]
 
+var cinematic_3d: Node
+var visual_3d_enabled := true
 var diver: CharacterBody2D
 var camera: Camera2D
 var discovered: Dictionary = {}
@@ -70,6 +73,9 @@ func _ready() -> void:
 	for arch in PASSAGE_ARCHES:
 		_build_arch_collision(arch)
 	_build_reef_collision()
+	cinematic_3d = Ocean3D.new()
+	cinematic_3d.name = "Native3DOcean"
+	add_child(cinematic_3d)
 	diver = DiverScript.new()
 	diver.name = "Mergulhador"
 	diver.position = SPAWN
@@ -154,6 +160,7 @@ func begin_expedition() -> void:
 		# Appearance is a shared local paper-doll, separate from equipment bonuses.
 		diver.set_appearance(progress.appearance_snapshot())
 	diver.recover()
+	diver.visible = not visual_3d_enabled
 	field_guide_open = false
 	inventory_open = false
 	chart_open = false
@@ -171,6 +178,8 @@ func end_expedition() -> void:
 func _process(delta: float) -> void:
 	if not active:
 		return
+	if cinematic_3d != null and visual_3d_enabled:
+		cinematic_3d.call("synchronize",self,delta)
 	time_s += delta
 	sky_time += delta
 	_update_nearest()
@@ -190,7 +199,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not active:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_TAB:
+		if event.keycode == KEY_V:
+			visual_3d_enabled = not visual_3d_enabled
+			diver.visible = not visual_3d_enabled
+			queue_redraw()
+		elif event.keycode == KEY_TAB:
 			field_guide_open = not field_guide_open
 			inventory_open = false
 			chart_open = false
@@ -374,6 +387,13 @@ func _visible_bounds() -> Rect2:
 
 func _draw() -> void:
 	if not active:
+		return
+	if visual_3d_enabled and cinematic_3d != null:
+		var center: Vector2 = camera.get_screen_center_position()
+		var frame: Texture2D = cinematic_3d.call("texture")
+		if frame != null:
+			draw_texture_rect(frame,Rect2(center-Vector2(703.0,396.0),Vector2(1406.0,792.0)),false)
+		_draw_hud()
 		return
 	var area := _visible_bounds()
 	_draw_water(area)

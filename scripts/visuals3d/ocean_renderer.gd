@@ -18,7 +18,7 @@ var spot: SpotLight3D
 var environment_node: WorldEnvironment
 var last_sector := Vector2i(9999,9999)
 var t := 0.0
-var world: Node2D
+var world
 var points: Array[Node3D] = []
 var dust: Array[Node3D] = []
 var build_counter := 0
@@ -95,8 +95,8 @@ func synchronize(game_world: Node2D, delta: float) -> void:
 	environment_node.environment.fog_light_color = water_color
 	environment_node.environment.fog_density = lerpf(0.034,0.012,attenuation)
 	swimmer.position = _from_game(diver_pos,center,0.9)
-	swimmer.set_appearance(world.diver.appearance)
-	swimmer.animate(t,true,world.diver.velocity.length()>8.0,world.diver.is_facing_right)
+	swimmer.call("set_appearance",world.diver.appearance)
+	swimmer.call("animate",t,true,world.diver.velocity.length()>8.0,world.diver.is_facing_right)
 	spot.position = swimmer.position + Vector3(0,0,2.2)
 	spot.rotation_degrees = Vector3(0,0,0)
 	var sector := Vector2i(int(floor(center.x/420.0)),int(floor(center.y/420.0)))
@@ -235,7 +235,7 @@ func _update_fauna(center: Vector2) -> void:
 		var size_factor := maxf(length_px/104.0,0.42)
 		active_animal.scale = Vector3.ONE*(size_factor*0.72)
 		active_animal.scale.x *= float(specimen["dir"])
-		active_animal.animate(t)
+		active_animal.call("animate",t)
 
 func _build_particles() -> void:
 	for i in range(95):
