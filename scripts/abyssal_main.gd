@@ -16,7 +16,7 @@ var cabin_pilot: Node
 var lab_open := false
 var lab_selected := 0
 var lab_feedback := ""
-var menu_selected := 5
+var menu_selected := 2
 var menu_feedback := ""
 var wardrobe_open := false
 var wardrobe_row := 0
@@ -140,7 +140,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var chosen: int = CabinArt.click_menu(pointer)
 		if chosen >= 0:
 			_choose_menu(chosen)
-		elif menu_selected == 2 and Rect2(592,406,485,57).has_point(Vector2((pointer.x-55.0)/0.95,pointer.y)):
+		elif menu_selected == 2 and Rect2(787,468,326,49).has_point(Vector2((pointer.x-55.0)/0.95,pointer.y)):
 			_start_sea()
 
 func _cycle_wardrobe(direction: int) -> void:

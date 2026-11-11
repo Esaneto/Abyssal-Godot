@@ -21,7 +21,7 @@ static func click_menu(point: Vector2) -> int:
 	# Menu canvas is visually shifted/rescaled to reserve a real seat for the pilot.
 	var local := Vector2((point.x-55.0)/0.95,point.y)
 	for i in range(MENU.size()):
-		if vertical_nav(i).has_point(local) or bottom_nav(i).has_point(local):
+		if bottom_nav(i).has_point(local):
 			return i
 	return -1
 
@@ -233,59 +233,66 @@ static func _paint_console(c: CanvasItem, t: float) -> void:
 		c.draw_rect(Rect2(xx,610,10,5),Color("#fab255"))
 
 static func _paint_monitor(c: CanvasItem, t: float, selected: int, progress: RefCounted) -> void:
-	# Central touchscreen is a real, functional menu, not baked onto scenery.
-	UI.panel(c,Rect2(350,189,801,344),true)
-	UI.panel(c,Rect2(362,201,777,321))
-	c.draw_rect(Rect2(362,202,777,9),Color("#395276"))
-	UI.glow_line(c,Vector2(521,207),Vector2(979,207),Color("#ba956e"),2.0)
-	for i in range(MENU.size()):
-		var active := i==selected
-		var r := vertical_nav(i)
-		UI.panel(c,r,active,active)
-		UI.item(c,KEYS[i],r.position+Vector2(18,17),0.34)
-		UI.caption(c,MENU[i],r.position+Vector2(40,24),16,Color("#ffdd9c") if active else Color("#c5f5fa"))
-	var body := Rect2(565,230,556,276)
-	UI.panel(c,body)
-	UI.item(c,KEYS[selected],Vector2(605,270),0.93)
-	UI.caption(c,MENU[selected],Vector2(643,258),26,Color("#f0faff"))
-	UI.caption(c,DESCRIPTIONS[selected],Vector2(645,284),13,Color("#8ad1dd"))
-	c.draw_line(Vector2(580,296),Vector2(1108,296),Color(0.37,0.60,0.68,0.40),1.5,true)
+	# One compact, real console: the panoramic window remains visible above it.
+	# The former 800px touchscreen hid the art and is intentionally gone.
+	var pos := Vector2(754.0,354.0)
+	var size := Vector2(382.0,190.0)
+	UI.poly(c,[pos,pos+Vector2(size.x,0),pos+size,pos+Vector2(0,size.y)],
+		Color(0.010,0.022,0.035,0.86))
+	c.draw_rect(Rect2(pos+Vector2(3,3),size-Vector2(6,6)),Color(0.060,0.103,0.124,0.73))
+	c.draw_line(pos+Vector2(12,4),pos+Vector2(size.x-12,4),Color("#a08060"),1.7,true)
+	c.draw_line(pos+Vector2(12,size.y-4),pos+Vector2(size.x-12,size.y-4),
+		Color(0.38,0.56,0.58,0.37),1.3,true)
+	for i in range(5):
+		var px := pos.x+15.0+float(i)*15.0
+		c.draw_circle(Vector2(px,pos.y+15.0),1.6,
+			Color("#c39b6e") if i==0 else Color("#56757d"))
+	UI.item(c,KEYS[selected],pos+Vector2(34,53),0.55)
+	UI.caption(c,MENU[selected],pos+Vector2(69,50),23,Color("#f0e3c5"))
+	UI.caption(c,DESCRIPTIONS[selected],pos+Vector2(72,72),11,Color("#9faeae"))
+	c.draw_line(pos+Vector2(14,81),pos+Vector2(size.x-14,81),
+		Color(0.45,0.59,0.61,0.32),1.0,true)
 	match selected:
-		5:
-			var items := ["polymetallicNodule","ferromanganeseCrust","phosphorite","hydrothermalSulfide","oilCylinder","gasCylinder"]
-			var labels := ["Nódulo","Crosta","Fosforita","Sulfeto","Petróleo","Gás"]
-			for i in range(6):
-				var x := 578.0+float(i%3)*178.0
-				var y := 309.0+float(i/3)*90.0
-				UI.panel(c,Rect2(x,y,170,85))
-				UI.item(c,items[i],Vector2(x+39,y+37),0.83)
-				UI.caption(c,labels[i],Vector2(x+75,y+35),15,Color("#e5f8f8"))
-				UI.caption(c,"x%d" % progress.get_count(items[i]),Vector2(x+75,y+58),14,Color("#ffce78"))
-		4:
-			UI.caption(c,"ESPECIES REGISTRADAS NO DIARIO",Vector2(589,323),17,Color("#a1f3e9"))
-			UI.caption(c,"%d especies observadas" % progress.discovery_count(),Vector2(589,358),21,Color("#ffca7d"))
-			UI.caption(c,"Explore e pressione F perto de um animal",Vector2(589,401),15,Color("#d9f2f4"))
 		2:
-			UI.caption(c,"UMA ODISSEIA PELO OCEANO",Vector2(589,333),21,Color("#b9f8ff"))
-			UI.caption(c,"Explore cavernas, descubra especies e minere.",Vector2(589,369),15,Color("#cbebf2"))
-			UI.panel(c,Rect2(592,406,485,57),true)
-			UI.caption(c,"INICIAR EXPEDICAO  [ENTER]",Vector2(619,441),19,Color("#e7fdff"))
+			UI.caption(c,"CARTOGRAFIA   /   VIDA MARINHA   /   RECURSOS",
+				pos+Vector2(17,108),12,Color("#b6c9c7"))
+			UI.panel(c,Rect2(787.0,468.0,326.0,49.0),true,true)
+			UI.caption(c,"INICIAR EXPEDICAO   [ENTER]",
+				Vector2(807.0,499.0),17,Color("#f3e7cb"))
+		5:
+			var ids := ["polymetallicNodule","ferromanganeseCrust","phosphorite",
+				"hydrothermalSulfide","oilCylinder","gasCylinder"]
+			var labels := ["NODULOS","CROSTA","FOSFORITA","SULFETOS","PETROLEO","GAS"]
+			for i in range(6):
+				var col := int(i%3)
+				var row := int(i/3)
+				var x := pos.x+17.0+float(col)*121.0
+				var y := pos.y+107.0+float(row)*32.0
+				UI.caption(c,labels[i],Vector2(x,y),10,Color("#95aeb0"))
+				UI.caption(c,"x%d" % progress.get_count(ids[i]),Vector2(x,y+15),12,Color("#d7b583"))
+		4:
+			UI.caption(c,"%d ESPECIES REGISTRADAS" % progress.discovery_count(),
+				pos+Vector2(17,118),17,Color("#c9d2bd"))
+			UI.caption(c,"Explore e pressione F para observar.",
+				pos+Vector2(17,150),13,Color("#91afaf"))
 		1:
-			UI.caption(c,"PESQUISA E APRIMORAMENTO",Vector2(589,333),20,Color("#b9f8ff"))
-			UI.caption(c,"Tecnologias de oxigenio, traje e reconhecimento.",Vector2(589,370),15,Color("#c5edf2"))
-			UI.caption(c,"Pressione L para abrir a bancada de pesquisas.",Vector2(589,425),16,Color("#ffc978"))
+			UI.caption(c,"PESQUISA E APRIMORAMENTO DE EQUIPAMENTO",
+				pos+Vector2(17,120),13,Color("#d8c6ad"))
+			UI.caption(c,"Pressione L para abrir a bancada.",
+				pos+Vector2(17,152),13,Color("#a9bcc0"))
 		0,3:
-			UI.caption(c,"DISPONIVEL NO ABYSSAL WEB",Vector2(589,341),20,Color("#b3dce8"))
-			UI.caption(c,"Esta funcionalidade nao foi migrada para o Godot.",Vector2(589,377),15,Color("#c5edf2"))
-			UI.caption(c,"A exploracao nativa permanece independente.",Vector2(589,423),15,Color("#a1d5dc"))
-	# Quick-access controls are real clickable surfaces.
+			UI.caption(c,"DISPONIVEL NO CLIENTE WEB",
+				pos+Vector2(17,124),15,Color("#d5b58b"))
+			UI.caption(c,"A exploracao nativa esta independente.",
+				pos+Vector2(17,151),12,Color("#a6bec0"))
+	# Hardware keys on the deck are the actual navigational buttons.
 	for i in range(MENU.size()):
 		var active := i==selected
 		var b := bottom_nav(i)
 		UI.panel(c,b,active,active)
 		UI.item(c,KEYS[i],b.position+Vector2(65,22),0.53)
 		UI.caption(c,MENU[i].to_upper(),b.position+Vector2(11,53),12,
-			Color("#ffce72") if active else Color("#dcf5f9"),112)
+			Color("#f4c78c") if active else Color("#b6c2c0"),112)
 
 static func _paint_status(c: CanvasItem, t: float, status: String) -> void:
 	UI.panel(c,Rect2(37,9,379,66),true)
