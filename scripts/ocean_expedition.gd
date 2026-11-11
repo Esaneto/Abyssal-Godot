@@ -7,7 +7,7 @@ const Deposits = preload("res://scripts/geological_resources.gd")
 const ProgressScript = preload("res://scripts/exploration_progress.gd")
 const Art = preload("res://scripts/cinematic_art.gd")
 const ReefArt = preload("res://scripts/native_reef_art.gd")
-const NativeHUD = preload("res://scripts/native_ocean_hud.gd")
+const NativeHUD = preload("res://scripts/abyss_hud_immersive.gd")
 const Ocean3D = preload("res://scripts/visuals3d/ocean_renderer.gd")
 const AnimeFinish = preload("res://scripts/anime_ocean_finish.gd")
 

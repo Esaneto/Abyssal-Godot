@@ -4,7 +4,7 @@ extends RefCounted
 const Doll = preload("res://scripts/diver_paper_doll.gd")
 const Look = preload("res://scripts/diver_appearance.gd")
 
-static func _poly(c: CanvasItem, coords: Array[Vector2], tint: Color) -> void:
+static func _poly(c: CanvasItem, coords: Array, tint: Color) -> void:
 	c.draw_colored_polygon(PackedVector2Array(coords),tint)
 
 static func _line(c: CanvasItem, a: Vector2, b: Vector2, col: Color, width: float = 1.8) -> void:

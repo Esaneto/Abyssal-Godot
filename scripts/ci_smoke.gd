@@ -101,6 +101,12 @@ func _smoke() -> void:
 		push_error("Hydrojet did not recharge")
 		quit(18)
 		return
+	var anime_ink = load("res://scripts/anime_swimmer_ink.gd")
+	var immersion_hud = load("res://scripts/abyss_hud_immersive.gd")
+	if anime_ink == null or immersion_hud == null:
+		push_error("Anime diver ink or immersive HUD failed to load")
+		quit(19)
+		return
 	var ecology = load("res://scripts/marine_ecology.gd")
 	if ecology == null or ecology.SPECIES.size() < 8:
 		push_error("Catalogo da fauna ausente ou incompleto")

@@ -19,6 +19,11 @@ Projeto Godot independente do Abyssal web. A apresentacao padrao agora utiliza c
 - Laboratorio: sete pesquisas, incluindo melhorias de bateria, impulso e recarga do Hidrojato.
 - **V**: alternar ilustracao anime 2D e renderizador 3D de comparacao no Mar Aberto. 3D fica suspenso quando nao esta em uso.
 
+## Direcao de arte: Abyssal anime sombrio
+A cabine utiliza o personagem vetorial anime em camadas SVG com movimento de cabelo e respiracao, composto sobre o oceano tridimensional. O Mar Aberto agora utiliza o mergulhador dinamico de `scripts/anime_swimmer_ink.gd`, com bracos, pernas, nadadeiras, rosto, equipamentos e cabelo em ilustracao procedural. Raias curvas e animadas substituem os antigos poligonos angulares. A nova iluminacao reduz a saturacao e a luminosidade excessiva, e o HUD foi reduzido a instrumentos de sobrevivencia + tres ferramentas; os minerios permanecem acessiveis pelo inventario `I`.
+
+Isso e uma etapa de direcao de arte, nao um pacote de ilustracoes finais AAA. A fisica aquatica, motor, mapa e salvamento permanecem intocados.
+
 ## Nova apresentacao 3D
 - Cabine inteira construida em `scripts/visuals3d/cabin_renderer.gd`, com janelas, relevo submarino, luzes, poltrona e mergulhador(a) 3D.
 - Mar Aberto renderizado por `scripts/visuals3d/ocean_renderer.gd`. Criaturas 3D animadas correspondem ao catalogo e aos encontros reais da simulacao 2D.
