@@ -138,12 +138,12 @@ static func _poly(canvas: Node2D, vertices: Array, tint: Color) -> void:
 static func _line(canvas: Node2D, a: Vector2, b: Vector2, tint: Color, weight: float = 2.0) -> void:
 	canvas.draw_line(a, b, tint, weight, true)
 
-static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: float, time_s: float, size_px: float, light: float) -> void:
+static func paint(canvas: Node2D, species_id: String, pos: Vector2, direction: float, time_s: float, size_px: float, light: float, tilt: float = 0.0) -> void:
 	# All local silhouettes are about 100px long, uniformly scaled into world units.
 	# Over-sized species retain their spectacular scale, even beyond the viewport.
 	var scale_factor := maxf(size_px, MIN_LENGTH_PX) / 100.0
 	var sign_x := 1.0 if direction >= 0.0 else -1.0
-	canvas.draw_set_transform(pos, 0.0, Vector2(sign_x * scale_factor, scale_factor))
+	canvas.draw_set_transform(pos,tilt,Vector2(sign_x*scale_factor,scale_factor))
 	var breathe := sin(time_s * 1.7 + pos.x * 0.005)
 	var dark := Color("#0b2232")
 	var silver := Color("#8fb8bc").lerp(Color("#223b48"), 1.0 - light)

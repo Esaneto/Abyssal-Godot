@@ -10,6 +10,7 @@ const ReefArt = preload("res://scripts/native_reef_art.gd")
 const NativeHUD = preload("res://scripts/abyss_hud_immersive.gd")
 const Ocean3D = preload("res://scripts/visuals3d/ocean_renderer.gd")
 const AnimeFinish = preload("res://scripts/anime_ocean_finish.gd")
+const AmbientLife = preload("res://scripts/ambient_marine_life.gd")
 
 const MAP_W := 24000.0
 const MAP_H := 21000.0
@@ -407,6 +408,8 @@ func _draw() -> void:
 	AnimeFinish.background(self,area,time_s,_sunlight(),depth_at_y(diver.position.y))
 	ReefArt.atmosphere(self,area,time_s,_sunlight(),depth_at_y(diver.position.y))
 	Art.ocean_distance(self, self, area, time_s, _sunlight())
+	AmbientLife.draw_ambient(self,area,time_s,depth_at_y(diver.position.y),_sunlight())
+	AmbientLife.draw_lurking_depth(self,area,time_s,depth_at_y(diver.position.y))
 	_draw_light_beams(area)
 	_draw_marine_snow(area)
 	_draw_seafloor(area)
@@ -550,7 +553,11 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 			var seed_value := cx * 91891 + cy * 31337 + 241
 			var rng := RandomNumberGenerator.new()
 			rng.seed = seed_value
-			var count := 2 if cy * CHUNK_H < 2200.0 else 1
+			var count := 1
+			if cy * CHUNK_H < 2200.0 and rng.randf() < 0.21:
+				count = 2
+			elif cy * CHUNK_H >= 2200.0 and rng.randf() < 0.10:
+				count = 0
 			for j in range(count):
 				var base := Vector2(float(cx) * CHUNK_W + rng.randf_range(80, CHUNK_W - 80),
 					float(cy) * CHUNK_H + rng.randf_range(60, CHUNK_H - 60))
@@ -564,7 +571,7 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 				var species: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
 				# Giant rays are rare, not an aquarium wall of overlapping diamonds.
 				# Deterministic choice per sector avoids pop-in after camera movement.
-				if str(species["id"]) in ["manta", "eagle_ray"] and (cx * 3 + cy * 5 + j) % 5 != 0:
+				if str(species["id"]) in ["manta", "eagle_ray"] and (cx * 3 + cy * 5 + j) % 6 != 0:
 					var smaller: Array[Dictionary] = []
 					for candidate in pool:
 						if str(candidate["id"]) not in ["manta", "eagle_ray"]:
@@ -574,39 +581,20 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 				if species["id"] in ["isopod", "seapig"]:
 					base.y = _seafloor_y(base.x) - 35.0
 				var phase := time_s + float(seed_value + j) * 0.7
-				var wander := Vector2.ZERO
-				match species["id"]:
-					"manta":
-						wander = Vector2(100.0 * sin(phase * 0.10), 28.0 * cos(phase * 0.17))
-					"eagle_ray":
-						wander = Vector2(84.0 * sin(phase * 0.16), 23.0 * cos(phase * 0.23))
-					"turtle":
-						wander = Vector2(55.0 * sin(phase * 0.18), 16.0 * cos(phase * 0.28))
-					"jelly":
-						wander = Vector2(20.0 * sin(phase * 0.13), 42.0 * sin(phase * 0.35))
-					"oarfish":
-						wander = Vector2(58.0 * sin(phase * 0.12), 31.0 * sin(phase * 0.18))
-					"viper":
-						wander = Vector2(47.0 * sin(phase * 0.35), 9.0 * cos(phase * 0.21))
-					"angler":
-						wander = Vector2(17.0 * sin(phase * 0.12), 11.0 * sin(phase * 0.2))
-					"vampire":
-						wander = Vector2(28.0 * sin(phase * 0.11), 19.0 * cos(phase * 0.15))
-					"isopod":
-						wander = Vector2(24.0 * sin(phase * 0.10), 0.0)
-					"gulper":
-						wander = Vector2(46.0 * sin(phase * 0.18), 12.0 * cos(phase * 0.22))
-					"seapig":
-						wander = Vector2(12.0 * sin(phase * 0.09), 0.0)
+				var wander: Vector2 = _species_wander(str(species["id"]),phase)
+				var motion: Vector2 = (_species_wander(str(species["id"]),phase+0.12)-wander)/0.12
 				var pos := base + wander
 				if species["id"] in ["isopod", "seapig"]:
 					pos.y = _seafloor_y(pos.x) - 36.0
 				if _seafloor_y(pos.x) - pos.y < 40.0 and species["id"] not in ["isopod", "seapig"]:
 					continue
+				var heading: float = 1.0 if motion.x >= 0.0 else -1.0
+				var tilt: float = clampf(atan2(motion.y,maxf(1.2,absf(motion.x))),-0.43,0.43)*heading
+				if str(species["id"]) in ["jelly","isopod","seapig"]:
+					tilt = 0.0
 				creatures.append({
 					"id": species["id"], "info": species, "pos": pos,
-					"dir": 1.0 if (cx + cy + j) % 2 == 0 else -1.0,
-					"seed": seed_value
+					"dir": heading, "tilt": tilt, "seed": seed_value
 				})
 	return creatures
 
@@ -617,7 +605,7 @@ func _draw_fauna(area: Rect2) -> void:
 		var d := depth_at_y(pos.y)
 		var light := _water_light(d)
 		Ecology.paint(self, info["id"], pos, creature["dir"], time_s,
-			float(info["length_px"]), light)
+			float(info["length_px"]), light, float(creature.get("tilt",0.0)))
 		# Rare, non-intrusive bioluminescence breaks absolute darkness.
 		if d > 240.0 and info["id"] in ["angler", "viper", "jelly"]:
 			draw_arc(pos, 44.0, 0.0, TAU, 32, Color(0.1, 0.7, 0.8, 0.035), 2.0)
@@ -876,3 +864,20 @@ func _ellipse(center: Vector2, radii: Vector2, tint: Color) -> void:
 func _on_diver_died() -> void:
 	diver.position = SPAWN
 	diver.recover()
+
+# Deterministic ecological drift, sampled twice for a tangent heading.
+# A single function defines both position and facing: animals never swim backward.
+func _species_wander(kind: String, phase: float) -> Vector2:
+	match kind:
+		"manta": return Vector2(100.0*sin(phase*0.10),28.0*cos(phase*0.17))
+		"eagle_ray": return Vector2(84.0*sin(phase*0.16),23.0*cos(phase*0.23))
+		"turtle": return Vector2(55.0*sin(phase*0.18),16.0*cos(phase*0.28))
+		"jelly": return Vector2(20.0*sin(phase*0.13),42.0*sin(phase*0.35))
+		"oarfish": return Vector2(58.0*sin(phase*0.12),31.0*sin(phase*0.18))
+		"viper": return Vector2(47.0*sin(phase*0.35),9.0*cos(phase*0.21))
+		"angler": return Vector2(17.0*sin(phase*0.12),11.0*sin(phase*0.20))
+		"vampire": return Vector2(28.0*sin(phase*0.11),19.0*cos(phase*0.15))
+		"isopod": return Vector2(24.0*sin(phase*0.10),0.0)
+		"gulper": return Vector2(46.0*sin(phase*0.18),12.0*cos(phase*0.22))
+		"seapig": return Vector2(12.0*sin(phase*0.09),0.0)
+	return Vector2.ZERO

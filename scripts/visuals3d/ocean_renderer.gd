@@ -246,6 +246,7 @@ func _update_fauna(center: Vector2) -> void:
 		var size_factor := maxf(length_px/104.0,0.42)
 		active_animal.scale = Vector3.ONE*(size_factor*0.72)
 		active_animal.scale.x *= float(specimen["dir"])
+		active_animal.rotation.z = -float(specimen.get("tilt",0.0))
 		active_animal.call("animate",t)
 
 func _build_particles() -> void:
