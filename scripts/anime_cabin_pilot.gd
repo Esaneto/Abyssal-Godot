@@ -70,5 +70,8 @@ func texture() -> Texture2D:
 	return viewport.get_texture()
 
 func set_enabled(enabled: bool) -> void:
+	process_mode = Node.PROCESS_MODE_INHERIT if enabled else Node.PROCESS_MODE_DISABLED
 	if viewport != null:
 		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if enabled else SubViewport.UPDATE_DISABLED
+	if portrait != null:
+		portrait.visible = enabled
