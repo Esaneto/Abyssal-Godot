@@ -73,6 +73,9 @@ func _process(delta: float) -> void:
 	time_s += delta
 	if in_open_sea:
 		return
+	var stored_appearance = progress.profile.get("appearance", {}) if progress != null else {}
+	if stored_appearance != appearance_cache:
+		appearance_cache = progress.appearance_snapshot()
 	if cabin_scene != null:
 		cabin_scene.call("update_live", time_s, appearance_cache)
 	if cabin_pilot != null:
