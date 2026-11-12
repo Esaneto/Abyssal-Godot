@@ -131,6 +131,46 @@ func _smoke() -> void:
 			push_error("Criatura abaixo da escala minima: " + species["id"])
 			quit(8)
 			return
-	main.call("_unhandled_input", InputEventKey.new())
-	print("GODOT_SMOKE_PASS: cabine 3D, oceano 3D, fisica 2D, fauna e progressao")
+	# Long-session regression: repeated transitions must not accumulate hidden worlds or nodes.
+	var escape_event := InputEventKey.new()
+	escape_event.keycode = KEY_ESCAPE
+	escape_event.pressed = true
+	main.call("_unhandled_input", escape_event)
+	await process_frame
+	await process_frame
+	if main.get_node_or_null("ExpedicaoOceanica") != null:
+		push_error("Mundo oceanico permaneceu escondido apos retornar a cabine")
+		quit(23)
+		return
+	var baseline_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	for cycle in range(6):
+		main.call("_start_sea")
+		await process_frame
+		await physics_frame
+		if main.get_node_or_null("CinematicCabin3D") != null or main.get_node_or_null("OriginalAnimatedPilot") != null:
+			push_error("Cabine pesada permaneceu viva durante mergulho, ciclo %d" % cycle)
+			quit(24)
+			return
+		var cycle_world := main.get_node_or_null("ExpedicaoOceanica")
+		if cycle_world == null:
+			push_error("Mundo oceanico ausente no ciclo %d" % cycle)
+			quit(25)
+			return
+		main.call("_unhandled_input", escape_event)
+		await process_frame
+		await process_frame
+		if main.get_node_or_null("ExpedicaoOceanica") != null:
+			push_error("Mundo oceanico acumulou apos ciclo %d" % cycle)
+			quit(26)
+			return
+		if main.get_node_or_null("CinematicCabin3D") == null or main.get_node_or_null("OriginalAnimatedPilot") == null:
+			push_error("Cabine nao foi restaurada apos ciclo %d" % cycle)
+			quit(27)
+			return
+	var final_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	if final_nodes > baseline_nodes + 8:
+		push_error("Contagem de nos cresceu entre ciclos: %d -> %d" % [baseline_nodes, final_nodes])
+		quit(28)
+		return
+	print("GODOT_SMOKE_PASS: lifecycle enxuto, fisica, fauna e progressao sem acumulacao de nos")
 	quit(0)
