@@ -79,8 +79,11 @@ func texture() -> Texture2D:
 	return viewport.get_texture()
 
 func set_enabled(active: bool) -> void:
+	process_mode = Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
 	if viewport != null:
 		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+	if root3d != null:
+		root3d.visible = active
 
 func _from_game(point: Vector2, camera_center: Vector2, z: float = 0.0) -> Vector3:
 	return Vector3((point.x-camera_center.x)*UNITS_PER_PIXEL,
@@ -220,7 +223,7 @@ func _vent_cluster(parent: Node3D, rng: RandomNumberGenerator) -> void:
 
 func _update_fauna(center: Vector2) -> void:
 	var area := Rect2(center-Vector2(800,470),Vector2(1600,940))
-	var found: Array[Dictionary] = world._creatures_in_view(area)
+	var found: Array[Dictionary] = world.get_creatures_in_area(area)
 	var total := mini(MAX_CREATURES,found.size())
 	for i in range(MAX_CREATURES):
 		if i>=total:

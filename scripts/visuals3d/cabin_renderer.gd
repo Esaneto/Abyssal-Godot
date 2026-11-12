@@ -63,8 +63,11 @@ func texture() -> Texture2D:
 	return viewport.get_texture()
 
 func set_enabled(value: bool) -> void:
+	process_mode = Node.PROCESS_MODE_INHERIT if value else Node.PROCESS_MODE_DISABLED
 	if viewport != null:
 		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if value else SubViewport.UPDATE_DISABLED
+	if stage != null:
+		stage.visible = value
 
 func _build_outside() -> void:
 	# Geology and marine biology exist as actual 3D objects behind the windows.

@@ -66,6 +66,9 @@ var status_until := 0.0
 var visited_cell := ""
 var arch_geometry: Array[Dictionary] = []
 var reef_polygons: Array[PackedVector2Array] = []
+# Procedural biology is generated once per visited chunk, then only animated.
+var creature_chunk_cache: Dictionary = {}
+var visible_creatures: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -76,10 +79,7 @@ func _ready() -> void:
 	for arch in PASSAGE_ARCHES:
 		_build_arch_collision(arch)
 	_build_reef_collision()
-	cinematic_3d = Ocean3D.new()
-	cinematic_3d.name = "Native3DOcean"
-	add_child(cinematic_3d)
-	cinematic_3d.call("set_enabled",false)
+	# The optional 3D preview is expensive. Create it only when the player asks for it.
 	diver = DiverScript.new()
 	diver.name = "Mergulhador"
 	diver.position = SPAWN
@@ -96,7 +96,15 @@ func _ready() -> void:
 	camera.position_smoothing_speed = 7.0
 	camera.enabled = false
 	diver.add_child(camera)
-	set_process(true)
+	set_process(false)
+
+func _ensure_cinematic_3d() -> void:
+	if cinematic_3d != null:
+		return
+	cinematic_3d = Ocean3D.new()
+	cinematic_3d.name = "Native3DOcean"
+	add_child(cinematic_3d)
+	cinematic_3d.call("set_enabled", false)
 
 func set_progress(profile_state: RefCounted) -> void:
 	progress = profile_state
@@ -155,6 +163,7 @@ func begin_expedition() -> void:
 	active = true
 	visible = true
 	process_mode = Node.PROCESS_MODE_INHERIT
+	set_process(true)
 	camera.enabled = true
 	var checkpoint: Vector2 = progress.get_checkpoint() if progress != null else SPAWN
 	diver.global_position = checkpoint if is_navigable(checkpoint, 67.0) else SPAWN
@@ -166,7 +175,10 @@ func begin_expedition() -> void:
 		diver.set_appearance(progress.appearance_snapshot())
 	diver.recover()
 	diver.visible = not visual_3d_enabled
-	cinematic_3d.call("set_enabled",visual_3d_enabled)
+	if visual_3d_enabled:
+		_ensure_cinematic_3d()
+	if cinematic_3d != null:
+		cinematic_3d.call("set_enabled", visual_3d_enabled)
 	field_guide_open = false
 	inventory_open = false
 	chart_open = false
@@ -177,9 +189,11 @@ func end_expedition() -> void:
 	if progress != null:
 		progress.set_checkpoint(diver.global_position, sky_time)
 	active = false
-	cinematic_3d.call("set_enabled",false)
+	if cinematic_3d != null:
+		cinematic_3d.call("set_enabled", false)
 	camera.enabled = false
 	visible = false
+	set_process(false)
 	process_mode = Node.PROCESS_MODE_DISABLED
 
 func _process(delta: float) -> void:
@@ -189,6 +203,8 @@ func _process(delta: float) -> void:
 		cinematic_3d.call("synchronize",self,delta)
 	time_s += delta
 	sky_time += delta
+	# One fauna snapshot feeds observation, drawing and the optional 3D view.
+	visible_creatures = _creatures_in_view(_visible_bounds())
 	_update_nearest()
 	# The living sprite is part of the darkness, never a bright sticker.
 	diver.modulate = CinematicReveal.diver_tint(depth_at_y(diver.position.y),_sunlight())
@@ -211,7 +227,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_V:
 			visual_3d_enabled = not visual_3d_enabled
 			diver.visible = not visual_3d_enabled
-			cinematic_3d.call("set_enabled",visual_3d_enabled)
+			if visual_3d_enabled:
+				_ensure_cinematic_3d()
+			if cinematic_3d != null:
+				cinematic_3d.call("set_enabled", visual_3d_enabled)
 			queue_redraw()
 		elif event.keycode == KEY_TAB:
 			field_guide_open = not field_guide_open
@@ -545,6 +564,46 @@ func _draw_kelps(area: Rect2) -> void:
 		var height := 90.0 + 115.0 * absf(sin(float(i + start) * 1.2))
 		Art.kelp_frond(self, x, seabed, height, time_s, x * 0.013)
 
+func _chunk_creature_templates(cx: int, cy: int) -> Array:
+	var key := cy * 64 + cx
+	if creature_chunk_cache.has(key):
+		return creature_chunk_cache[key]
+	var templates: Array = []
+	var seed_value := cx * 91891 + cy * 31337 + 241
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var count := 1
+	if cy * CHUNK_H < 2200.0 and rng.randf() < 0.21:
+		count = 2
+	elif cy * CHUNK_H >= 2200.0 and rng.randf() < 0.10:
+		count = 0
+	for j in range(count):
+		var base := Vector2(float(cx) * CHUNK_W + rng.randf_range(80, CHUNK_W - 80),
+			float(cy) * CHUNK_H + rng.randf_range(60, CHUNK_H - 60))
+		var bottom_distance := _seafloor_y(base.x) - base.y
+		if bottom_distance < 75.0:
+			continue
+		var depth := depth_at_y(base.y)
+		var pool := Ecology.candidates_at(depth, bottom_distance)
+		if pool.is_empty():
+			continue
+		var species: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
+		if str(species["id"]) in ["manta", "eagle_ray"] and (cx * 3 + cy * 5 + j) % 6 != 0:
+			var smaller: Array[Dictionary] = []
+			for candidate in pool:
+				if str(candidate["id"]) not in ["manta", "eagle_ray"]:
+					smaller.append(candidate)
+			if not smaller.is_empty():
+				species = smaller[rng.randi_range(0, smaller.size() - 1)]
+		if species["id"] in ["isopod", "seapig"]:
+			base.y = _seafloor_y(base.x) - 35.0
+		templates.append({
+			"id": species["id"], "info": species, "base": base,
+			"seed": seed_value + j * 997
+		})
+	creature_chunk_cache[key] = templates
+	return templates
+
 func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 	var creatures: Array[Dictionary] = []
 	var min_x := maxi(0, int(floor(area.position.x / CHUNK_W)) - 1)
@@ -553,48 +612,21 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 	var max_y := mini(47, int(ceil(area.end.y / CHUNK_H)) + 1)
 	for cy in range(min_y, max_y + 1):
 		for cx in range(min_x, max_x + 1):
-			# Deterministic sector sampling, with population decreasing with depth.
-			var seed_value := cx * 91891 + cy * 31337 + 241
-			var rng := RandomNumberGenerator.new()
-			rng.seed = seed_value
-			var count := 1
-			if cy * CHUNK_H < 2200.0 and rng.randf() < 0.21:
-				count = 2
-			elif cy * CHUNK_H >= 2200.0 and rng.randf() < 0.10:
-				count = 0
-			for j in range(count):
-				var base := Vector2(float(cx) * CHUNK_W + rng.randf_range(80, CHUNK_W - 80),
-					float(cy) * CHUNK_H + rng.randf_range(60, CHUNK_H - 60))
-				var bottom_distance := _seafloor_y(base.x) - base.y
-				if bottom_distance < 75.0:
-					continue
-				var depth := depth_at_y(base.y)
-				var pool := Ecology.candidates_at(depth, bottom_distance)
-				if pool.is_empty():
-					continue
-				var species: Dictionary = pool[rng.randi_range(0, pool.size() - 1)]
-				# Giant rays are rare, not an aquarium wall of overlapping diamonds.
-				# Deterministic choice per sector avoids pop-in after camera movement.
-				if str(species["id"]) in ["manta", "eagle_ray"] and (cx * 3 + cy * 5 + j) % 6 != 0:
-					var smaller: Array[Dictionary] = []
-					for candidate in pool:
-						if str(candidate["id"]) not in ["manta", "eagle_ray"]:
-							smaller.append(candidate)
-					if not smaller.is_empty():
-						species = smaller[rng.randi_range(0, smaller.size() - 1)]
-				if species["id"] in ["isopod", "seapig"]:
-					base.y = _seafloor_y(base.x) - 35.0
-				var phase := time_s + float(seed_value + j) * 0.7
-				var wander: Vector2 = _species_wander(str(species["id"]),phase)
-				var motion: Vector2 = (_species_wander(str(species["id"]),phase+0.12)-wander)/0.12
+			for template in _chunk_creature_templates(cx, cy):
+				var species: Dictionary = template["info"]
+				var base: Vector2 = template["base"]
+				var seed_value := int(template["seed"])
+				var phase := time_s + float(seed_value) * 0.7
+				var wander: Vector2 = _species_wander(str(species["id"]), phase)
+				var motion: Vector2 = (_species_wander(str(species["id"]), phase + 0.12) - wander) / 0.12
 				var pos := base + wander
 				if species["id"] in ["isopod", "seapig"]:
 					pos.y = _seafloor_y(pos.x) - 36.0
 				if _seafloor_y(pos.x) - pos.y < 40.0 and species["id"] not in ["isopod", "seapig"]:
 					continue
 				var heading: float = 1.0 if motion.x >= 0.0 else -1.0
-				var tilt: float = clampf(atan2(motion.y,maxf(1.2,absf(motion.x))),-0.43,0.43)*heading
-				if str(species["id"]) in ["jelly","isopod","seapig"]:
+				var tilt: float = clampf(atan2(motion.y, maxf(1.2, absf(motion.x))), -0.43, 0.43) * heading
+				if str(species["id"]) in ["jelly", "isopod", "seapig"]:
 					tilt = 0.0
 				creatures.append({
 					"id": species["id"], "info": species, "pos": pos,
@@ -602,8 +634,19 @@ func _creatures_in_view(area: Rect2) -> Array[Dictionary]:
 				})
 	return creatures
 
+func get_creatures_in_area(area: Rect2) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var expanded := area.grow(180.0)
+	for creature in visible_creatures:
+		if expanded.has_point(creature["pos"]):
+			result.append(creature)
+	return result
+
 func _draw_fauna(area: Rect2) -> void:
-	for creature in _creatures_in_view(area):
+	var expanded := area.grow(520.0)
+	for creature in visible_creatures:
+		if not expanded.has_point(creature["pos"]):
+			continue
 		var pos: Vector2 = creature["pos"]
 		var info: Dictionary = creature["info"]
 		var d := depth_at_y(pos.y)
@@ -682,45 +725,11 @@ func _set_status(message: String) -> void:
 func _update_nearest() -> void:
 	nearest = {}
 	nearby_distance = INF
-	var view := Rect2(diver.position - Vector2(240, 240), Vector2(480, 480))
-	for creature in _creatures_in_view(view):
+	for creature in visible_creatures:
 		var dist := diver.position.distance_to(creature["pos"])
 		if dist < 205.0 and dist < nearby_distance:
 			nearest = creature["info"]
 			nearby_distance = dist
-
-func _draw_deep_visibility(area: Rect2) -> void:
-	# Fading peripheral vision and an underwater lamp reinforce unease at depth.
-	# The darkness never conceals the HUD, which is drawn afterward.
-	var depth := depth_at_y(diver.position.y)
-	var dark := clampf((depth - 165.0) / 880.0 * 0.72 + (1.0 - _sunlight()) * 0.19, 0.0, 0.76)
-	if dark < 0.045:
-		return
-	var focus := diver.position
-	var visible_radius := lerpf(610.0, 305.0, clampf(depth / 1200.0, 0.0, 1.0))
-	var outside := Color(0.0, 0.008, 0.024, dark)
-	# Ring-shaped darkness, leaving the near-diver area visible.
-	var outer_r := 1760.0
-	for i in range(48):
-		var a := TAU * float(i) / 48.0
-		var b := TAU * float(i + 1) / 48.0
-		draw_colored_polygon(PackedVector2Array([
-			focus + Vector2(cos(a), sin(a)) * visible_radius,
-			focus + Vector2(cos(b), sin(b)) * visible_radius,
-			focus + Vector2(cos(b), sin(b)) * outer_r,
-			focus + Vector2(cos(a), sin(a)) * outer_r
-		]), outside)
-	# Narrow torch cone keeps the player oriented at night and below 200m.
-	if depth > 180.0:
-		var forward := Vector2.RIGHT.rotated(diver.visual_heading)
-		var normal := forward.orthogonal()
-		var end_pos := focus + forward * 530.0
-		draw_colored_polygon(PackedVector2Array([
-			focus + forward*22.0 - normal*13.0,
-			end_pos - normal*84.0,
-			end_pos + normal*84.0,
-			focus + forward*22.0 + normal*13.0
-		]), Color(0.12, 0.67, 0.69, 0.026))
 
 func _draw_hud() -> void:
 	var center := camera.get_screen_center_position()
@@ -737,42 +746,6 @@ func _draw_hud() -> void:
 		_draw_navigation_chart(origin.x,origin.y)
 	elif field_guide_open:
 		_draw_field_guide(origin.x,origin.y)
-func _draw_quick_tools(x: float, y: float) -> void:
-	if progress == null:
-		return
-	var selected: String = str(progress.selected_tool())
-	for i in range(2):
-		var id := "abyssPickaxe" if i == 0 else "emptyCylinder"
-		var p := Vector2(x + 565.0 + float(i) * 140.0, y + 604.0)
-		var chosen: bool = id == selected
-		draw_rect(Rect2(p, Vector2(133, 56)), Color("#0e4657") if chosen else Color("#092b3a"))
-		draw_rect(Rect2(p + Vector2(3, 3), Vector2(127, 50)),
-			Color("#194e5b") if chosen else Color("#113846"))
-		_text(str(i + 1) + " | " + ("PICARETA" if i == 0 else "CILINDRO"),
-			p + Vector2(8, 24), 14, Color("#f6d5a1") if chosen else Color("#a5d7dc"))
-		_text("REUTILIZAVEL", p + Vector2(8, 44), 11, Color("#8bbfc7"))
-
-func _draw_sonar(x: float, y: float) -> void:
-	var w := 234.0
-	var h := 135.0
-	var p := Vector2(x + 1020.0, y + 20.0)
-	draw_rect(Rect2(p, Vector2(w, h)), Color(0.015, 0.074, 0.103, 0.96))
-	_text("SONAR  /  RELEVO", p + Vector2(12, 21), 15, Color("#b8eef0"))
-	for yi in range(9):
-		for xi in range(19):
-			var sx := (float(xi) + 0.5) / 19.0
-			var sy := (float(yi) + 0.5) / 9.0
-			var sample := diver.position + Vector2((sx - 0.5) * (1840.0 + 260.0 * _sonar_level()),
-				(sy - 0.5) * (1080.0 + 170.0 * _sonar_level()))
-			var solid := not is_navigable(sample, 0.0)
-			draw_rect(Rect2(p.x + 10 + float(xi) * 11.2, p.y + 31 + float(yi) * 10.2, 11.5, 10.5),
-				Color("#546072") if solid else Color("#15556a"))
-	draw_circle(p + Vector2(w * 0.5, 78.0), 5.0, Color("#ffcb77"))
-	_text("M: MAPA COMPLETO", p + Vector2(27, 128), 13, Color("#a8dadd"))
-
-func _sonar_level() -> int:
-	return progress.research_level("sonar") if progress != null else 0
-
 func _draw_inventory_panel(x: float, y: float) -> void:
 	var p := Vector2(x + 315, y + 158)
 	draw_rect(Rect2(p, Vector2(740, 445)), Color(0.013, 0.058, 0.082, 0.96))
@@ -850,10 +823,6 @@ func _draw_field_guide(x: float, y: float) -> void:
 		_text(chosen["story"], Vector2(x + 661, y + 196), 14, Color("#c9f7f4"))
 	_text("J / K NAVEGAR  |  REGISTROS %d / %d" % [entries.size(), Ecology.SPECIES.size()],
 		Vector2(x + 661, y + 234), 15, Color("#f9d99b"))
-
-func _bar(pos: Vector2, width: float, ratio: float, tint: Color) -> void:
-	draw_rect(Rect2(pos.x, pos.y, width, 14), Color("#173843"))
-	draw_rect(Rect2(pos.x + 2, pos.y + 2, (width - 4) * clampf(ratio, 0.0, 1.0), 10), tint)
 
 func _text(label: String, at: Vector2, size: int, tint: Color) -> void:
 	draw_string(ThemeDB.fallback_font, at, label, HORIZONTAL_ALIGNMENT_LEFT, -1, size, tint)

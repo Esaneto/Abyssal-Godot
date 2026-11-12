@@ -3,7 +3,6 @@ extends CharacterBody2D
 ## Colisoes Godot, nado com aceleracao/arrasto, flutuabilidade e correntes.
 signal diver_died
 const Look = preload("res://scripts/diver_appearance.gd")
-const Doll = preload("res://scripts/diver_paper_doll.gd")
 const NativeRig = preload("res://scripts/native_diver_rig.gd")
 const InkSwimmer = preload("res://scripts/anime_swimmer_ink.gd")
 
@@ -130,7 +129,8 @@ func _physics_process(delta: float) -> void:
 		propulsion_bubbles.emitting = is_propelling
 		propulsion_bubbles.position = Vector2(-58.0, 10.0).rotated(visual_heading)
 		propulsion_bubbles.rotation = visual_heading
-	queue_redraw()
+	if anime_rig == null or not anime_rig.has_visible_character():
+		queue_redraw()
 
 func set_appearance(candidate: Dictionary) -> void:
 	appearance = Look.normalize(candidate)
