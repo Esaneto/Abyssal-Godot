@@ -17,15 +17,10 @@ func _smoke() -> void:
 		push_error("Cabine 3D cinematografica nao inicializou")
 		quit(9)
 		return
-	var world := main.get_node_or_null("ExpedicaoOceanica")
-	if world == null:
-		push_error("Expedicao Oceanica nao foi criada")
+	# Performance invariant: the ocean world must not exist behind the cabin.
+	if main.get_node_or_null("ExpedicaoOceanica") != null:
+		push_error("Expedicao Oceanica foi carregada escondida no menu")
 		quit(3)
-		return
-	var renderer := world.get_node_or_null("Native3DOcean")
-	if renderer == null or renderer.call("texture") == null:
-		push_error("Renderizador 3D de oceano indisponivel")
-		quit(10)
 		return
 	var command_bridge = main.get_node_or_null("OriginalAnimatedPilot")
 	if command_bridge == null or command_bridge.call("texture") == null:
@@ -39,6 +34,15 @@ func _smoke() -> void:
 		return
 	main.call("_start_sea")
 	await physics_frame
+	var world := main.get_node_or_null("ExpedicaoOceanica")
+	if world == null:
+		push_error("Expedicao Oceanica nao foi criada ao mergulhar")
+		quit(3)
+		return
+	if world.get_node_or_null("Native3DOcean") != null:
+		push_error("Preview 3D foi carregado sem ser solicitado")
+		quit(10)
+		return
 	if not world.visible:
 		push_error("Mar Aberto nao abriu")
 		quit(4)
