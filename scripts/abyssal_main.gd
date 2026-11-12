@@ -21,58 +21,74 @@ var menu_feedback := ""
 var wardrobe_open := false
 var wardrobe_row := 0
 
-## Native 2.5D presentation prototype. No production gameplay has been migrated yet.
-## Kept independent from the existing Node.js/WebSocket server.
-const W := 1280.0
-const H := 720.0
-const INK := Color("#041426")
-const BLUE := Color("#126c91")
-const AQUA := Color("#49e2ef")
-const GOLD := Color("#f9b55d")
-const FOAM := Color("#c8f8f5")
-
+## Runtime keeps only the active presentation tree alive.
 var in_open_sea := false
-var pilot_position := Vector2(640.0, 340.0)
 var time_s := 0.0
-var bubbles: Array[Vector2] = []
+var appearance_cache: Dictionary = {}
 
 func _ready() -> void:
 	progress = ProgressScript.new()
 	time_s = progress.sun_time()
-	for i in range(75):
-		bubbles.append(Vector2(fposmod(float(i * 197 + 31), W), fposmod(float(i * 113 + 47), H)))
-	cabin_scene = Cabin3D.new()
-	cabin_scene.name = "CinematicCabin3D"
-	add_child(cabin_scene)
-	cabin_pilot = CabinPilot.new()
-	cabin_pilot.name = "OriginalAnimatedPilot"
-	add_child(cabin_pilot)
+	appearance_cache = progress.appearance_snapshot()
+	_create_cabin()
+	set_process(true)
+
+func _create_cabin() -> void:
+	if cabin_scene == null:
+		cabin_scene = Cabin3D.new()
+		cabin_scene.name = "CinematicCabin3D"
+		add_child(cabin_scene)
+	if cabin_pilot == null:
+		cabin_pilot = CabinPilot.new()
+		cabin_pilot.name = "OriginalAnimatedPilot"
+		add_child(cabin_pilot)
+	cabin_scene.call("set_enabled", true)
+	cabin_pilot.call("set_enabled", true)
+
+func _release_cabin() -> void:
+	if cabin_scene != null:
+		cabin_scene.call("set_enabled", false)
+		cabin_scene.queue_free()
+		cabin_scene = null
+	if cabin_pilot != null:
+		cabin_pilot.call("set_enabled", false)
+		cabin_pilot.queue_free()
+		cabin_pilot = null
+
+func _create_expedition() -> void:
+	if expedition != null:
+		return
 	expedition = ExpeditionScript.new()
 	expedition.name = "ExpedicaoOceanica"
-	expedition.process_mode = Node.PROCESS_MODE_DISABLED
-	expedition.visible = false
 	add_child(expedition)
 	expedition.call("set_progress", progress)
-	set_process(true)
+
+func _release_expedition() -> void:
+	if expedition == null:
+		return
+	expedition.queue_free()
+	expedition = null
 
 func _process(delta: float) -> void:
 	time_s += delta
+	if in_open_sea:
+		return
 	if cabin_scene != null:
-		cabin_scene.call("set_enabled",not in_open_sea)
+		cabin_scene.call("update_live", time_s, appearance_cache)
 	if cabin_pilot != null:
-		cabin_pilot.call("set_enabled",not in_open_sea)
-	if not in_open_sea:
-		cabin_scene.call("update_live",time_s,progress.appearance_snapshot())
-		cabin_pilot.call("update_appearance",progress.appearance_snapshot(),time_s)
+		cabin_pilot.call("update_appearance", appearance_cache, time_s)
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if in_open_sea:
-			if event.keycode == KEY_ESCAPE:
+			if event.keycode == KEY_ESCAPE and expedition != null:
 				time_s = float(expedition.get("sky_time"))
-				in_open_sea = false
 				expedition.call("end_expedition")
+				in_open_sea = false
+				_release_expedition()
+				_create_cabin()
+				queue_redraw()
 			return
 		if wardrobe_open:
 			if event.keycode in [KEY_ESCAPE, KEY_C]:
@@ -148,8 +164,9 @@ func _cycle_wardrobe(direction: int) -> void:
 		return
 	var slot: String = str(Look.SLOT_ORDER[wardrobe_row])
 	if progress.cycle_appearance(slot,direction):
+		appearance_cache = progress.appearance_snapshot()
 		if expedition != null and expedition.diver != null:
-			expedition.diver.set_appearance(progress.appearance_snapshot())
+			expedition.diver.set_appearance(appearance_cache)
 		queue_redraw()
 
 func _choose_menu(index: int) -> void:
@@ -175,9 +192,13 @@ func _study_selected() -> void:
 	queue_redraw()
 
 func _start_sea() -> void:
+	if in_open_sea:
+		return
 	in_open_sea = true
 	lab_open = false
 	wardrobe_open = false
+	_release_cabin()
+	_create_expedition()
 	expedition.set("sky_time", time_s)
 	expedition.call("begin_expedition")
 
@@ -197,7 +218,7 @@ func _draw() -> void:
 	else:
 		CabinArt.paint(self,time_s,menu_selected,progress,menu_feedback)
 	if wardrobe_open:
-		Wardrobe.paint(self,progress.appearance_snapshot(),wardrobe_row)
+		Wardrobe.paint(self,appearance_cache,wardrobe_row)
 	if lab_open:
 		_draw_laboratory()
 
@@ -234,13 +255,3 @@ func _draw_laboratory() -> void:
 	UIArt.caption(self,"PESQUISAR  [R]",Vector2(943,591),18,Color("#fff2ca"))
 	if not lab_feedback.is_empty():
 		UIArt.caption(self,lab_feedback,Vector2(155,614),13,Color("#ffc77b"),738.0)
-
-func _draw_label(value: String, pos: Vector2, size: int, color: Color) -> void:
-	draw_string(ThemeDB.fallback_font, pos, value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
-
-func _draw_filled_ellipse(center: Vector2, radii: Vector2, color: Color) -> void:
-	var points := PackedVector2Array()
-	for k in range(33):
-		var angle := TAU * float(k) / 32.0
-		points.append(center + Vector2(cos(angle) * radii.x, sin(angle) * radii.y))
-	draw_colored_polygon(points, color)
