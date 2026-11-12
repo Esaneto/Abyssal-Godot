@@ -179,10 +179,9 @@ func _run_tests() -> void:
 	root.add_child(main)
 	await process_frame
 	main.progress = restored
-	var world = main.get_node("ExpedicaoOceanica")
-	world.set_progress(restored)
-	if world.diver.appearance["body"]!="male":
-		_fail("Cena mar aberto nao sincronizou corpo salvo", 53)
+	main.appearance_cache = restored.appearance_snapshot()
+	if main.get_node_or_null("ExpedicaoOceanica") != null:
+		_fail("Mar Aberto foi carregado escondido antes do mergulho", 53)
 		return
 	var wardrobe_event := InputEventKey.new()
 	wardrobe_event.pressed = true
@@ -193,8 +192,8 @@ func _run_tests() -> void:
 		return
 	wardrobe_event.keycode = KEY_RIGHT
 	main.call("_unhandled_input",wardrobe_event)
-	if restored.appearance_snapshot()["body"]!="female" or world.diver.appearance["body"]!="female":
-		_fail("Alteracao da cabine nao chegou a cena de exploracao", 55)
+	if restored.appearance_snapshot()["body"]!="female":
+		_fail("Alteracao da cabine nao chegou ao perfil persistente", 55)
 		return
 	wardrobe_event.keycode = KEY_LEFT
 	main.call("_unhandled_input",wardrobe_event)
@@ -205,6 +204,10 @@ func _run_tests() -> void:
 		return
 	main.call("_start_sea")
 	await physics_frame
+	var world = main.get_node_or_null("ExpedicaoOceanica")
+	if world == null:
+		_fail("Mar Aberto nao foi criado ao mergulhar", 53)
+		return
 	if absf(world.depth_at_y(21000.0) - 2200.0) > 1.0:
 		_fail("Escala de profundidade divergiu do mundo original", 24)
 		return
